@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #F1F0EC;
+  --color-surface-neutral: #DCDCD5;
+  --color-surface-muted: #888E80;
+  --color-accent-primary: #E7F45A;
+  --color-accent-warm: #F2A93E;
+  
+  --color-tx-primary: #1C1C1A;
+  --color-tx-inverse: #F5F5F0;
+  --color-tx-muted: #8D8D86;
+  
+  --color-bd-subtle: #D8D7D0;
+
+  --font-sans: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-canvas text-tx-primary font-sans antialiased;
+  }
+}
