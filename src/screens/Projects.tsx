@@ -1,13 +1,67 @@
+import { useState } from 'react';
 import { Search, MoreVertical, Plus } from 'lucide-react';
 import { Header, ProgressBar } from '../components/Shared';
+import { BottomSheet, BottomSheetField } from '../components/BottomSheet';
+import { useProjects } from '../context/ProjectsContext';
 import { ProjectItem } from '../types';
+import { useToast } from '../context/ToastContext';
 
 export function Projects() {
-  const projects: ProjectItem[] = [
-    { id: '1', index: '09', name: 'Dribbble Project', priority: 'high', completionPct: 75, tone: 'lime' },
-    { id: '2', index: '06', name: 'Panze Portfolio', priority: 'low', completionPct: 40, tone: 'olive' },
-    { id: '3', index: '03', name: 'Netflix Portfolio', priority: 'high', completionPct: 90, tone: 'neutral' },
-  ];
+  const { projects, addProject, updateProject, deleteProject } = useProjects();
+  const { showToast } = useToast();
+  
+  const [isSheetOpen, setSheetOpen] = useState(false);
+  const [editingProj, setEditingProj] = useState<ProjectItem | null>(null);
+
+  const [form, setForm] = useState({
+    name: '',
+    priority: 'low' as 'high' | 'low',
+    completionPct: '0',
+    tone: 'lime' as 'lime' | 'olive' | 'neutral',
+  });
+
+  const handleOpenSheet = (proj?: ProjectItem) => {
+    if (proj) {
+      setEditingProj(proj);
+      setForm({
+        name: proj.name,
+        priority: proj.priority,
+        completionPct: proj.completionPct.toString(),
+        tone: proj.tone,
+      });
+    } else {
+      setEditingProj(null);
+      setForm({
+        name: '',
+        priority: 'low',
+        completionPct: '0',
+        tone: 'lime',
+      });
+    }
+    setSheetOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!form.name.trim()) return;
+
+    if (editingProj) {
+      updateProject(editingProj.id, {
+        name: form.name,
+        priority: form.priority,
+        completionPct: Number(form.completionPct),
+        tone: form.tone,
+      });
+    } else {
+      addProject({
+        name: form.name,
+        priority: form.priority,
+        completionPct: Number(form.completionPct),
+        tone: form.tone,
+      });
+    }
+    setSheetOpen(false);
+    showToast({ message: editingProj ? 'Project updated' : 'Project created' });
+  };
 
   return (
     <div className="flex flex-col h-full bg-canvas pb-28 overflow-y-auto no-scrollbar">
@@ -27,14 +81,18 @@ export function Projects() {
 
       <div className="px-5 mt-4 flex items-center justify-between mb-6">
         <h2 className="text-[20px] font-medium text-tx-primary">Recent Activity</h2>
-        <button className="w-10 h-10 rounded-full bg-tx-primary text-tx-inverse flex items-center justify-center">
+        <button onClick={() => handleOpenSheet()} className="w-10 h-10 rounded-full bg-tx-primary text-tx-inverse flex items-center justify-center">
           <Plus size={20} />
         </button>
       </div>
 
       <div className="px-5 flex flex-col gap-4">
         {projects.map((proj) => (
-          <div key={proj.id} className="bg-surface-neutral rounded-[24px] p-5 relative overflow-hidden">
+          <div 
+            key={proj.id} 
+            onClick={() => handleOpenSheet(proj)}
+            className="bg-surface-neutral rounded-[24px] p-5 relative overflow-hidden cursor-pointer active:opacity-80 transition-opacity"
+          >
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-3">
                 <img src={`https://i.pravatar.cc/150?u=${proj.id}`} alt="client" className="w-10 h-10 rounded-full object-cover bg-canvas" />
@@ -61,7 +119,85 @@ export function Projects() {
             <ProgressBar progress={proj.completionPct} tone={proj.tone} />
           </div>
         ))}
+        {projects.length === 0 && (
+          <div className="text-center text-tx-muted py-8 text-[15px]">No projects found.</div>
+        )}
       </div>
+
+      <BottomSheet
+        isOpen={isSheetOpen}
+        onClose={() => setSheetOpen(false)}
+        title={editingProj ? 'Edit Project' : 'New Project'}
+        onSave={handleSave}
+      >
+        <BottomSheetField>
+          <input
+            type="text"
+            placeholder="Project Name"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className="w-full text-[20px] font-medium text-tx-primary placeholder:text-tx-muted/50 bg-transparent outline-none py-2"
+            autoFocus
+          />
+        </BottomSheetField>
+        
+        <BottomSheetField label="Priority">
+          <div className="flex bg-surface-neutral rounded-full p-1 w-full">
+            {['low', 'high'].map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setForm({ ...form, priority: opt as any })}
+                className={`flex-1 py-2 text-center text-[14px] font-medium rounded-full transition-colors ${
+                  form.priority === opt ? 'bg-canvas text-tx-primary shadow-sm' : 'text-tx-muted'
+                }`}
+              >
+                {opt === 'high' ? 'High' : 'Low'}
+              </button>
+            ))}
+          </div>
+        </BottomSheetField>
+
+        <BottomSheetField label="Completion %">
+          <input 
+            type="number" 
+            min="0"
+            max="100"
+            placeholder="0"
+            value={form.completionPct}
+            onChange={e => setForm({ ...form, completionPct: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" 
+          />
+        </BottomSheetField>
+        
+        <BottomSheetField label="Theme Tone">
+          <div className="flex gap-2">
+             {['lime', 'olive', 'neutral'].map(t => (
+                <button
+                  key={t}
+                  onClick={() => setForm({ ...form, tone: t as any })}
+                  className={`flex-1 py-3 text-center text-[14px] font-medium rounded-xl transition-colors border ${
+                    form.tone === t ? 'border-tx-primary' : 'border-transparent bg-surface-neutral'
+                  }`}
+                >
+                  <span className="capitalize">{t}</span>
+                </button>
+             ))}
+          </div>
+        </BottomSheetField>
+        
+        {editingProj && (
+           <button 
+             onClick={() => {
+               deleteProject(editingProj.id);
+               setSheetOpen(false);
+               showToast({ message: 'Project deleted' });
+             }}
+             className="w-full py-3 mt-4 rounded-xl border border-red-500/20 text-red-500 font-medium text-[15px]"
+           >
+             Delete Project
+           </button>
+        )}
+      </BottomSheet>
     </div>
   );
 }

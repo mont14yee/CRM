@@ -1,44 +1,92 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, MoreVertical, Pause } from 'lucide-react';
 import { Header } from '../components/Shared';
 import { BottomSheet, BottomSheetField } from '../components/BottomSheet';
 import { useToast } from '../context/ToastContext';
+import { useTimeTracker } from '../context/TimeTrackerContext';
 
 export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
   const [timerState, setTimerState] = useState<'idle' | 'running'>('idle');
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   
   const [isStartSheetOpen, setStartSheetOpen] = useState(false);
   const [isSaveSheetOpen, setSaveSheetOpen] = useState(false);
   
   const { showToast } = useToast();
+  const { addTimeEntry } = useTimeTracker();
 
   const [form, setForm] = useState({
-    project: '',
-    note: '',
+    projectId: '',
+    notes: '',
     billable: true,
-    duration: '01:40:02',
   });
+
+  const [manualDuration, setManualDuration] = useState('00:00:00');
+
+  useEffect(() => {
+    if (timerState === 'running') {
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [timerState]);
+
+  const formatTime = (totalSeconds: number) => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   const handleStart = () => {
     setStartSheetOpen(false);
+    setElapsedSeconds(0);
     setTimerState('running');
   };
 
   const handleStop = () => {
     setTimerState('idle');
+    setManualDuration(formatTime(elapsedSeconds));
     setSaveSheetOpen(true);
   };
 
   const handleSave = () => {
+    // Parse duration back to seconds
+    const parts = manualDuration.split(':');
+    let totalSecs = elapsedSeconds;
+    if (parts.length === 3) {
+      totalSecs = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+    }
+
+    addTimeEntry({
+      projectId: form.projectId,
+      durationSeconds: totalSecs,
+      date: new Date().toISOString().split('T')[0],
+      notes: form.notes,
+      billable: form.billable,
+    });
+
     setSaveSheetOpen(false);
     showToast({
       message: 'Time saved successfully',
       actionLabel: 'Log manual',
-      onAction: () => setSaveSheetOpen(true),
+      onAction: () => handleManualEntry(),
     });
+    
+    // reset
+    setElapsedSeconds(0);
+    setForm({ projectId: '', notes: '', billable: true });
   };
 
   const handleManualEntry = () => {
+    setTimerState('idle');
+    setManualDuration('01:00:00');
     setSaveSheetOpen(true);
   };
 
@@ -86,15 +134,15 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
                stroke="var(--color-accent-primary)"
                strokeWidth="4"
                strokeDasharray="716"
-               strokeDashoffset={timerState === 'running' ? "500" : "716"}
+               strokeDashoffset={timerState === 'running' ? 716 - ((elapsedSeconds % 60) / 60) * 716 : 716}
                strokeLinecap="round"
-               className="transition-all duration-1000 ease-out"
+               className="transition-all duration-1000 ease-linear"
              />
           </svg>
 
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <div className="text-[36px] font-light text-tx-inverse tabular-nums tracking-tight">
-              {timerState === 'running' ? '01:40:02' : '00:00:00'}
+              {formatTime(elapsedSeconds)}
             </div>
           </div>
         </div>
@@ -125,11 +173,23 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
         saveLabel="Start"
       >
         <BottomSheetField label="Project / Task">
-          <input type="text" placeholder="Search or + New" className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" />
+          <input 
+            type="text" 
+            placeholder="Search or + New" 
+            value={form.projectId}
+            onChange={e => setForm({ ...form, projectId: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" 
+          />
         </BottomSheetField>
         
         <BottomSheetField label="Note (optional)">
-          <input type="text" placeholder="What are you working on?" className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" />
+          <input 
+            type="text" 
+            placeholder="What are you working on?" 
+            value={form.notes}
+            onChange={e => setForm({ ...form, notes: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" 
+          />
         </BottomSheetField>
 
         <BottomSheetField>
@@ -152,7 +212,7 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
         onSave={handleSave}
         saveLabel="Save"
         secondaryAction={
-          <button onClick={() => setSaveSheetOpen(false)} className="w-full py-3.5 rounded-full text-tx-muted text-[15px] font-medium">
+          <button onClick={() => { setSaveSheetOpen(false); setElapsedSeconds(0); }} className="w-full py-3.5 rounded-full text-tx-muted text-[15px] font-medium">
             Discard
           </button>
         }
@@ -161,19 +221,30 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
           <div className="flex items-center text-[36px] font-light text-tx-primary">
             <input
               type="text"
-              value={form.duration}
-              onChange={(e) => setForm({ ...form, duration: e.target.value })}
+              value={manualDuration}
+              onChange={(e) => setManualDuration(e.target.value)}
               className="w-full bg-transparent outline-none py-2 tabular-nums"
             />
           </div>
         </BottomSheetField>
 
         <BottomSheetField label="Project / Task">
-          <input type="text" placeholder="Search or + New" className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" />
+          <input 
+            type="text" 
+            placeholder="Search or + New" 
+            value={form.projectId}
+            onChange={e => setForm({ ...form, projectId: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" 
+          />
         </BottomSheetField>
         
         <BottomSheetField label="Note">
-          <textarea placeholder="Add notes..." className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none h-24 resize-none" />
+          <textarea 
+            placeholder="Add notes..." 
+            value={form.notes}
+            onChange={e => setForm({ ...form, notes: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none h-24 resize-none" 
+          />
         </BottomSheetField>
       </BottomSheet>
     </div>

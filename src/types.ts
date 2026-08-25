@@ -10,9 +10,14 @@ export interface Category {
 export interface TaskItem {
   id: string;
   title: string;
-  startTime: string;
+  categoryId: string;
+  priority: 'Low' | 'Medium' | 'High';
+  date?: string; // ISO date-time
+  notes?: string;
   status: 'done' | 'active' | 'upcoming';
-  tone: Tone;
+  projectId?: string;
+  repeat?: string;
+  reminder?: number;
 }
 
 export interface ProjectItem {
@@ -36,15 +41,20 @@ export interface RevenueEntry {
   amount: number;
   clientOrProject: string;
   date: string;
-  status: 'paid' | 'pending' | 'overdue';
+  status: 'Paid' | 'Pending' | 'Overdue';
   invoiceNumber?: string;
   notes?: string;
 }
 
-export interface CalendarDay {
+export interface EventItem {
+  id: string;
+  title: string;
+  categoryId: string;
+  allDay: boolean;
   date: string;
-  weekday: string;
-  events: { time: string; label: string }[];
+  time?: string;
+  repeat: string;
+  notes?: string;
 }
 
 export interface TimeEntry {
@@ -68,4 +78,5 @@ export interface UserPreferences {
 
 export type TabState = 'dashboard' | 'projects' | 'tools' | 'messages';
 export type PushedScreenState = 'none' | 'tasks' | 'calendar' | 'finance' | 'time-tracker' | 'settings';
+
 

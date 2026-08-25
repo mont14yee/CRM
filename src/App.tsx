@@ -3,6 +3,7 @@ import { TabState, PushedScreenState } from './types';
 import { Navigation } from './components/Navigation';
 import { PreferencesProvider } from './context/PreferencesContext';
 import { ToastProvider } from './context/ToastContext';
+import { DataProvider } from './context/DataProvider';
 
 import { Dashboard } from './screens/Dashboard';
 import { Projects } from './screens/Projects';
@@ -24,26 +25,28 @@ export default function App() {
 
   return (
     <PreferencesProvider>
-      <ToastProvider>
-        <div className="relative w-full h-[100dvh] bg-canvas overflow-hidden max-w-[430px] mx-auto sm:border-x sm:border-bd-subtle shadow-2xl">
-          {/* Main Tabs Container */}
-          <div className="w-full h-full relative z-0">
-            <div className={activeTab === 'dashboard' ? 'block h-full' : 'hidden'}><Dashboard onPush={handlePush} /></div>
-            <div className={activeTab === 'projects' ? 'block h-full' : 'hidden'}><Projects /></div>
-            <div className={activeTab === 'tools' ? 'block h-full' : 'hidden'}><Tools onPush={handlePush} /></div>
-            <div className={activeTab === 'messages' ? 'block h-full' : 'hidden'}><Messages /></div>
+      <DataProvider>
+        <ToastProvider>
+          <div className="relative w-full h-[100dvh] bg-canvas overflow-hidden max-w-[430px] mx-auto sm:border-x sm:border-bd-subtle shadow-2xl">
+            {/* Main Tabs Container */}
+            <div className="w-full h-full relative z-0">
+              <div className={activeTab === 'dashboard' ? 'block h-full' : 'hidden'}><Dashboard onPush={handlePush} /></div>
+              <div className={activeTab === 'projects' ? 'block h-full' : 'hidden'}><Projects /></div>
+              <div className={activeTab === 'tools' ? 'block h-full' : 'hidden'}><Tools onPush={handlePush} /></div>
+              <div className={activeTab === 'messages' ? 'block h-full' : 'hidden'}><Messages /></div>
+            </div>
+
+            <Navigation activeTab={activeTab} onChange={setActiveTab} />
+
+            {/* Pushed Screens */}
+            {pushedScreen === 'tasks' && <Tasks onDismiss={handleDismiss} />}
+            {pushedScreen === 'calendar' && <Calendar onDismiss={handleDismiss} />}
+            {pushedScreen === 'finance' && <Finance onDismiss={handleDismiss} />}
+            {pushedScreen === 'time-tracker' && <TimeTracker onDismiss={handleDismiss} />}
+            {pushedScreen === 'settings' && <Settings onDismiss={handleDismiss} />}
           </div>
-
-          <Navigation activeTab={activeTab} onChange={setActiveTab} />
-
-          {/* Pushed Screens */}
-          {pushedScreen === 'tasks' && <Tasks onDismiss={handleDismiss} />}
-          {pushedScreen === 'calendar' && <Calendar onDismiss={handleDismiss} />}
-          {pushedScreen === 'finance' && <Finance onDismiss={handleDismiss} />}
-          {pushedScreen === 'time-tracker' && <TimeTracker onDismiss={handleDismiss} />}
-          {pushedScreen === 'settings' && <Settings onDismiss={handleDismiss} />}
-        </div>
-      </ToastProvider>
+        </ToastProvider>
+      </DataProvider>
     </PreferencesProvider>
   );
 }

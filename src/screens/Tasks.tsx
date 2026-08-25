@@ -1,38 +1,71 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { X, MoreVertical, Plus, ChevronDown } from 'lucide-react';
 import { Header, StatCard, ListRow } from '../components/Shared';
 import { BottomSheet, BottomSheetField, CategoryPicker } from '../components/BottomSheet';
 import { usePreferences } from '../context/PreferencesContext';
 import { useToast } from '../context/ToastContext';
+import { useTasks } from '../context/TasksContext';
+import { TaskItem } from '../types';
 
 export function Tasks({ onDismiss }: { onDismiss: () => void }) {
   const [tab, setTab] = useState('Today');
   const [isSheetOpen, setSheetOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<any>(null);
+  const [editingTask, setEditingTask] = useState<TaskItem | null>(null);
   const [showMoreDetails, setShowMoreDetails] = useState(false);
 
   const { preferences, addCategory } = usePreferences();
   const { showToast } = useToast();
+  const { tasks, addTask, updateTask, deleteTask, completeTask } = useTasks();
 
   const [form, setForm] = useState({
     title: '',
     category: '',
-    priority: 'Medium',
+    priority: 'Medium' as 'Low' | 'Medium' | 'High',
+    date: '',
+    notes: '',
   });
 
-  const handleOpenSheet = (task?: any) => {
+  const handleOpenSheet = (task?: TaskItem) => {
     if (task) {
       setEditingTask(task);
-      setForm({ title: task.title, category: '', priority: 'Medium' });
+      setForm({ 
+        title: task.title, 
+        category: task.categoryId, 
+        priority: task.priority,
+        date: task.date || '',
+        notes: task.notes || ''
+      });
     } else {
       setEditingTask(null);
-      setForm({ title: '', category: '', priority: 'Medium' });
+      setForm({ title: '', category: '', priority: 'Medium', date: '', notes: '' });
     }
     setShowMoreDetails(false);
     setSheetOpen(true);
   };
 
   const handleSave = () => {
+    if (!form.title.trim()) {
+      showToast({ message: 'Task title is required' });
+      return;
+    }
+    if (editingTask) {
+      updateTask(editingTask.id, {
+        title: form.title,
+        categoryId: form.category,
+        priority: form.priority,
+        date: form.date,
+        notes: form.notes,
+      });
+    } else {
+      addTask({
+        title: form.title,
+        categoryId: form.category,
+        priority: form.priority,
+        date: form.date,
+        notes: form.notes,
+        status: 'active',
+      });
+    }
     setSheetOpen(false);
     showToast({
       message: 'Task saved successfully',
@@ -41,11 +74,25 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
     });
   };
 
-  const tasks = [
-    { title: 'Sales', subtitle: 'Start 3:20 PM', status: 'done' },
-    { title: 'Design', subtitle: 'Start 6:20 PM', status: 'active' },
-    { title: 'Meeting', subtitle: 'Start 8:10 PM', status: 'upcoming' },
-  ];
+  const handleDelete = (id: string) => {
+    deleteTask(id);
+    showToast({ message: 'Task deleted' });
+  };
+
+  const handleComplete = (id: string) => {
+    completeTask(id);
+    showToast({ message: 'Task status updated' });
+  };
+
+  const completedTasks = tasks.filter(t => t.status === 'done').length;
+  const totalTasks = tasks.length;
+  
+  // Fake calculation for avg per day for now, based on total / something
+  // Just to make it dynamic
+  const uniqueDays = new Set(tasks.map(t => t.date ? t.date.split('T')[0] : '')).size || 1;
+  const avgPerDay = Math.round(totalTasks / uniqueDays) + 'h'; 
+
+  const displayTasks = tab === 'Today' ? tasks.filter(t => t.status !== 'done') : tasks;
 
   return (
     <div className="absolute inset-0 bg-canvas z-50 flex flex-col overflow-y-auto no-scrollbar">
@@ -89,15 +136,15 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-1">
-            <StatCard value="36" label="Total Tasks" tone="olive" />
+            <StatCard value={completedTasks.toString()} label="Total Completed" tone="olive" />
           </div>
           <div className="col-span-1 flex flex-col gap-3">
             <div className="flex-1 rounded-[20px] bg-accent-primary p-4 flex flex-col justify-center">
-              <div className="text-[28px] font-light text-tx-primary leading-tight">2h</div>
+              <div className="text-[28px] font-light text-tx-primary leading-tight">{avgPerDay}</div>
               <div className="text-[13px] font-medium text-tx-primary mt-0.5">Avg Per Day</div>
             </div>
             <div className="flex-1 rounded-[20px] bg-surface-neutral p-4 flex flex-col justify-center">
-              <div className="text-[28px] font-light text-tx-primary leading-tight">72h</div>
+              <div className="text-[28px] font-light text-tx-primary leading-tight">{totalTasks}</div>
               <div className="text-[13px] font-medium text-tx-muted mt-0.5">Total Tasks</div>
             </div>
           </div>
@@ -106,29 +153,33 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
 
       <div className="px-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[17px] font-medium text-tx-primary">Today Tasks</h2>
+          <h2 className="text-[17px] font-medium text-tx-primary">{tab === 'Today' ? 'Today Tasks' : 'All Tasks'}</h2>
           <button onClick={() => handleOpenSheet()} className="text-[20px] text-tx-primary">
             +
           </button>
         </div>
-        {tasks.map((t, idx) => {
-          let dotColor = 'bg-surface-neutral';
-          if (t.status === 'active') dotColor = 'bg-accent-primary';
-          else if (t.status === 'upcoming') dotColor = 'bg-surface-muted';
-          
-          return (
-            <ListRow
-              key={idx}
-              icon={<div className={`w-3 h-3 rounded-full ${dotColor}`} />}
-              title={t.title}
-              subtitle={t.subtitle}
-              onClick={() => handleOpenSheet(t)}
-              swipeable={true}
-              onComplete={() => showToast({ message: 'Task completed' })}
-              onDelete={() => showToast({ message: 'Task deleted' })}
-            />
-          );
-        })}
+        {displayTasks.length === 0 ? (
+          <div className="text-center text-tx-muted py-8 text-[15px]">No tasks found.</div>
+        ) : (
+          displayTasks.map((t) => {
+            let dotColor = 'bg-surface-neutral';
+            if (t.status === 'active') dotColor = 'bg-accent-primary';
+            else if (t.status === 'upcoming') dotColor = 'bg-surface-muted';
+            
+            return (
+              <ListRow
+                key={t.id}
+                icon={<div className={`w-3 h-3 rounded-full ${dotColor}`} />}
+                title={t.title}
+                subtitle={t.date ? new Date(t.date).toLocaleString() : t.priority}
+                onClick={() => handleOpenSheet(t)}
+                swipeable={true}
+                onComplete={() => handleComplete(t.id)}
+                onDelete={() => handleDelete(t.id)}
+              />
+            );
+          })
+        )}
       </div>
 
       <BottomSheet
@@ -163,7 +214,7 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
             {['Low', 'Medium', 'High'].map((opt) => (
               <button
                 key={opt}
-                onClick={() => setForm({ ...form, priority: opt })}
+                onClick={() => setForm({ ...form, priority: opt as any })}
                 className={`flex-1 py-2 text-center text-[14px] font-medium rounded-full transition-colors ${
                   form.priority === opt ? 'bg-canvas text-tx-primary shadow-sm' : 'text-tx-muted'
                 }`}
@@ -175,17 +226,27 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
         </BottomSheetField>
 
         {!showMoreDetails ? (
-          <button onClick={() => setShowMoreDetails(true)} className="text-[14px] font-medium text-tx-muted py-2">
+          <button onClick={() => setShowMoreDetails(true)} className="text-[14px] font-medium text-tx-muted py-2 text-left w-full">
             More details...
           </button>
         ) : (
           <>
             <BottomSheetField label="Date & Time">
-              <input type="datetime-local" className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" />
+              <input 
+                type="datetime-local" 
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" 
+              />
             </BottomSheetField>
             
             <BottomSheetField label="Notes">
-              <textarea placeholder="Add optional notes..." className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none h-24 resize-none" />
+              <textarea 
+                placeholder="Add optional notes..." 
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none h-24 resize-none" 
+              />
             </BottomSheetField>
           </>
         )}

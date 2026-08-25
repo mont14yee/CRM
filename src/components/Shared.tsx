@@ -1,4 +1,4 @@
-import { type ReactNode, useState, useRef, useEffect } from 'react';
+import React, { type ReactNode, useState, useRef, useEffect } from 'react';
 import { ChevronRight, ChevronsUpDown, Check, Trash2 } from 'lucide-react';
 import { Tone } from '../types';
 
@@ -105,6 +105,7 @@ export function ListRow({
   swipeable?: boolean;
   onComplete?: () => void;
   onDelete?: () => void;
+  key?: React.Key;
 }) {
   const [offset, setOffset] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
@@ -275,7 +276,7 @@ export function DayAgendaRow({
 }: {
   date: string;
   weekday: string;
-  events: { time: string; label: string }[];
+  events: { time: string; label: string; onClick?: () => void }[];
 }) {
   return (
     <div className="flex flex-col gap-2 mb-6">
@@ -286,7 +287,8 @@ export function DayAgendaRow({
         {events.map((evt, i) => (
           <div
             key={i}
-            className="flex flex-col justify-center h-16 min-w-[120px] px-4 rounded-[20px] bg-canvas border border-bd-subtle shrink-0"
+            onClick={evt.onClick}
+            className={`flex flex-col justify-center h-16 min-w-[120px] px-4 rounded-[20px] bg-canvas border border-bd-subtle shrink-0 ${evt.onClick ? 'cursor-pointer active:bg-surface-neutral' : ''}`}
           >
             <div className="text-[13px] font-medium text-tx-primary">{evt.time}</div>
             <div className="text-[13px] text-tx-muted mt-0.5 truncate">{evt.label}</div>

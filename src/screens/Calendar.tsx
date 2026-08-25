@@ -1,38 +1,87 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { X, MoreVertical, Search, Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { Header, DayAgendaRow } from '../components/Shared';
 import { BottomSheet, BottomSheetField, CategoryPicker } from '../components/BottomSheet';
 import { usePreferences } from '../context/PreferencesContext';
 import { useToast } from '../context/ToastContext';
+import { useCalendar } from '../context/CalendarContext';
+import { EventItem } from '../types';
 
 export function Calendar({ onDismiss }: { onDismiss: () => void }) {
   const [tab, setTab] = useState('Calendar');
   const [isSheetOpen, setSheetOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [showMoreDetails, setShowMoreDetails] = useState(false);
 
   const { preferences, addCategory } = usePreferences();
   const { showToast } = useToast();
+  const { events, addEvent, updateEvent, deleteEvent } = useCalendar();
 
   const [form, setForm] = useState({
     title: '',
     category: '',
     allDay: false,
+    date: new Date().toISOString().split('T')[0],
+    time: '',
+    repeat: 'None',
+    notes: '',
   });
 
-  const handleOpenSheet = (event?: any) => {
+  const handleOpenSheet = (event?: EventItem) => {
     if (event) {
       setEditingEvent(event);
-      setForm({ title: event.label, category: '', allDay: false });
+      setForm({ 
+        title: event.title, 
+        category: event.categoryId, 
+        allDay: event.allDay,
+        date: event.date,
+        time: event.time || '',
+        repeat: event.repeat || 'None',
+        notes: event.notes || '',
+      });
     } else {
       setEditingEvent(null);
-      setForm({ title: '', category: '', allDay: false });
+      setForm({ 
+        title: '', 
+        category: '', 
+        allDay: false, 
+        date: new Date().toISOString().split('T')[0],
+        time: '',
+        repeat: 'None',
+        notes: ''
+      });
     }
     setShowMoreDetails(false);
     setSheetOpen(true);
   };
 
   const handleSave = () => {
+    if (!form.title.trim()) {
+      showToast({ message: 'Event title is required' });
+      return;
+    }
+    
+    if (editingEvent) {
+      updateEvent(editingEvent.id, {
+        title: form.title,
+        categoryId: form.category,
+        allDay: form.allDay,
+        date: form.date,
+        time: form.time,
+        repeat: form.repeat,
+        notes: form.notes,
+      });
+    } else {
+      addEvent({
+        title: form.title,
+        categoryId: form.category,
+        allDay: form.allDay,
+        date: form.date,
+        time: form.time,
+        repeat: form.repeat,
+        notes: form.notes,
+      });
+    }
     setSheetOpen(false);
     showToast({
       message: 'Event saved successfully',
@@ -43,6 +92,19 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
 
   const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   const grid = Array.from({ length: 35 }, (_, i) => i - 2);
+
+  // Group events by date for rendering DayAgendaRow
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, typeof events>();
+    events.forEach(e => {
+      const arr = map.get(e.date) || [];
+      arr.push(e);
+      map.set(e.date, arr);
+    });
+    return map;
+  }, [events]);
+
+  const sortedDates = Array.from(eventsByDate.keys()).sort();
 
   return (
     <div className="absolute inset-0 bg-canvas z-50 flex flex-col overflow-y-auto no-scrollbar">
@@ -95,8 +157,11 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
           {grid.map((num, i) => {
             const isAdj = num <= 0 || num > 31;
             const displayNum = isAdj ? (num <= 0 ? 30 + num : num - 31) : num;
+            
+            // Just simulate "today" is May 17, 2025 for grid visual mapping
             const isToday = num === 17;
-            const hasEvent = num === 16 || num === 20;
+            const dateStr = `2025-05-${displayNum.toString().padStart(2, '0')}`;
+            const hasEvent = !isAdj && eventsByDate.has(dateStr);
 
             return (
               <div key={i} className="flex flex-col items-center justify-center relative h-10">
@@ -122,26 +187,30 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
             +
           </button>
         </div>
-        <div onClick={() => handleOpenSheet({ label: 'Gym Session', time: '9 AM' })}>
-          <DayAgendaRow
-            date="16 May"
-            weekday="Friday"
-            events={[
-              { time: '9 AM', label: 'Gym Session' },
-              { time: '6 PM', label: 'Design' }
-            ]}
-          />
-        </div>
-        <div onClick={() => handleOpenSheet({ label: 'Playing Cricket', time: '8 AM' })}>
-          <DayAgendaRow
-            date="17 May"
-            weekday="Saturday"
-            events={[
-              { time: '8 AM', label: 'Playing Cricket' },
-              { time: '10 AM', label: 'Design' }
-            ]}
-          />
-        </div>
+        
+        {sortedDates.map(date => {
+          const dateEvents = eventsByDate.get(date)!;
+          const dateObj = new Date(date + 'T00:00:00');
+          const dateDisplay = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+          const weekday = dateObj.toLocaleDateString('en-GB', { weekday: 'long' });
+          
+          return (
+            <div key={date}>
+              <DayAgendaRow
+                date={dateDisplay}
+                weekday={weekday}
+                events={dateEvents.map(e => ({ 
+                  time: e.allDay ? 'All Day' : e.time || '', 
+                  label: e.title,
+                  onClick: () => handleOpenSheet(e)
+                }))}
+              />
+            </div>
+          );
+        })}
+        {sortedDates.length === 0 && (
+          <div className="text-center text-tx-muted py-8 text-[15px]">No events found.</div>
+        )}
       </div>
 
       <BottomSheet
@@ -184,34 +253,71 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
             </div>
             {!form.allDay ? (
               <div className="flex gap-2">
-                <input type="date" className="flex-1 px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" />
-                <input type="time" className="w-32 px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" />
+                <input 
+                  type="date" 
+                  value={form.date}
+                  onChange={e => setForm({ ...form, date: e.target.value })}
+                  className="flex-1 px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" 
+                />
+                <input 
+                  type="time" 
+                  value={form.time}
+                  onChange={e => setForm({ ...form, time: e.target.value })}
+                  className="w-32 px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" 
+                />
               </div>
             ) : (
-              <input type="date" className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" />
+              <input 
+                type="date" 
+                value={form.date}
+                onChange={e => setForm({ ...form, date: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none" 
+              />
             )}
           </div>
         </BottomSheetField>
 
         {!showMoreDetails ? (
-          <button onClick={() => setShowMoreDetails(true)} className="text-[14px] font-medium text-tx-muted py-2">
+          <button onClick={() => setShowMoreDetails(true)} className="text-[14px] font-medium text-tx-muted py-2 text-left w-full">
             More details...
           </button>
         ) : (
           <>
             <BottomSheetField label="Repeat">
-              <select className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none">
-                <option>None</option>
-                <option>Daily</option>
-                <option>Weekly</option>
-                <option>Monthly</option>
-                <option>Custom</option>
+              <select 
+                value={form.repeat}
+                onChange={e => setForm({ ...form, repeat: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none"
+              >
+                <option value="None">None</option>
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Custom">Custom</option>
               </select>
             </BottomSheetField>
             
             <BottomSheetField label="Notes">
-              <textarea placeholder="Add optional notes..." className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none h-24 resize-none" />
+              <textarea 
+                placeholder="Add optional notes..." 
+                value={form.notes}
+                onChange={e => setForm({ ...form, notes: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none h-24 resize-none" 
+              />
             </BottomSheetField>
+            
+            {editingEvent && (
+               <button 
+                 onClick={() => {
+                   deleteEvent(editingEvent.id);
+                   setSheetOpen(false);
+                   showToast({ message: 'Event deleted' });
+                 }}
+                 className="w-full py-3 mt-4 rounded-xl border border-red-500/20 text-red-500 font-medium text-[15px]"
+               >
+                 Delete Event
+               </button>
+            )}
           </>
         )}
       </BottomSheet>
