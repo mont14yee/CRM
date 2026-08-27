@@ -1,4 +1,10 @@
-import { useState, useMemo } from 'react';
+import re
+
+with open('src/screens/Dashboard.tsx', 'r') as f:
+    content = f.read()
+
+# Add imports
+imports = """import { useState, useMemo } from 'react';
 import { Search, Bell, ChevronRight, X, Briefcase, Users, Calendar, AlertCircle } from 'lucide-react';
 import { Header, ExpandableHeader, DayAgendaRow } from '../components/Shared';
 import { PushedScreenState } from '../types';
@@ -11,9 +17,13 @@ import { useClients } from '../context/ClientsContext';
 import { useProjects } from '../context/ProjectsContext';
 import { formatCurrencyCompact, formatCurrency } from '../utils/currency';
 import { getRecentMonths, getTodayDateStr } from '../utils/date';
-import { useNavigation } from '../context/NavigationContext';
+import { useNavigation } from '../context/NavigationContext';"""
 
-export function Dashboard({ onPush }: { onPush: (screen: PushedScreenState) => void }) {
+content = re.sub(r"import \{ Search, Bell, ChevronRight \} from 'lucide-react';.*?import \{ getRecentMonths \} from '\.\./utils/date';", imports, content, flags=re.DOTALL)
+
+
+# Update Dashboard component
+new_comp = """export function Dashboard({ onPush }: { onPush: (screen: PushedScreenState) => void }) {
   const { name, avatarUrl } = useProfile();
   const { preferences } = usePreferences();
   const { tasks } = useTasks();
@@ -319,3 +329,9 @@ export function Dashboard({ onPush }: { onPush: (screen: PushedScreenState) => v
     </div>
   );
 }
+"""
+
+content = re.sub(r'export function Dashboard.*', new_comp, content, flags=re.DOTALL)
+
+with open('src/screens/Dashboard.tsx', 'w') as f:
+    f.write(content)

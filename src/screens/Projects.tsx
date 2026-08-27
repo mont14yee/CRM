@@ -2,15 +2,21 @@ import { useState } from 'react';
 import { Search, MoreVertical, Plus } from 'lucide-react';
 import { Header, ProgressBar } from '../components/Shared';
 import { BottomSheet, BottomSheetField } from '../components/BottomSheet';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useProjects } from '../context/ProjectsContext';
 import { ProjectItem } from '../types';
 import { useToast } from '../context/ToastContext';
+import { useClients } from '../context/ClientsContext';
+import { useNavigation } from '../context/NavigationContext';
 
 export function Projects() {
   const { projects, addProject, updateProject, deleteProject } = useProjects();
+  const { clients } = useClients();
+  const { goToClient } = useNavigation();
   const { showToast } = useToast();
   
   const [isSheetOpen, setSheetOpen] = useState(false);
+  const [isDeleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editingProj, setEditingProj] = useState<ProjectItem | null>(null);
 
   const [form, setForm] = useState({
@@ -18,6 +24,7 @@ export function Projects() {
     priority: 'low' as 'high' | 'low',
     completionPct: '0',
     tone: 'lime' as 'lime' | 'olive' | 'neutral',
+    clientId: '',
   });
 
   const handleOpenSheet = (proj?: ProjectItem) => {
@@ -26,17 +33,13 @@ export function Projects() {
       setForm({
         name: proj.name,
         priority: proj.priority,
-        completionPct: proj.completionPct.toString(),
+        completionPct: String(proj.completionPct),
         tone: proj.tone,
+        clientId: proj.clientId || '',
       });
     } else {
       setEditingProj(null);
-      setForm({
-        name: '',
-        priority: 'low',
-        completionPct: '0',
-        tone: 'lime',
-      });
+      setForm({ name: '', priority: 'low', completionPct: '0', tone: 'lime', clientId: '' });
     }
     setSheetOpen(true);
   };
@@ -50,6 +53,7 @@ export function Projects() {
         priority: form.priority,
         completionPct: Number(form.completionPct),
         tone: form.tone,
+        clientId: form.clientId || undefined,
       });
     } else {
       addProject({
@@ -57,6 +61,7 @@ export function Projects() {
         priority: form.priority,
         completionPct: Number(form.completionPct),
         tone: form.tone,
+        clientId: form.clientId || undefined,
       });
     }
     setSheetOpen(false);
@@ -95,7 +100,14 @@ export function Projects() {
           >
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-3">
-                <img src={`https://i.pravatar.cc/150?u=${proj.id}`} alt="client" className="w-10 h-10 rounded-full object-cover bg-canvas" />
+                {proj.clientId && (
+                  <button onClick={() => goToClient(proj.clientId!)} className="w-10 h-10 rounded-full overflow-hidden bg-surface-neutral active:opacity-80">
+                    <img src={clients.find(c => c.id === proj.clientId)?.avatarUrl || `https://i.pravatar.cc/150?u=${proj.clientId}`} alt="client" className="w-full h-full object-cover" />
+                  </button>
+                )}
+                {!proj.clientId && (
+                  <img src={`https://i.pravatar.cc/150?u=${proj.id}`} alt="client" className="w-10 h-10 rounded-full object-cover bg-canvas" />
+                )}
                 <div className={`px-3 py-1.5 rounded-full text-[12px] font-medium ${
                   proj.priority === 'high' ? 'bg-canvas text-tx-primary' : 'bg-canvas/50 text-tx-muted'
                 }`}>
@@ -139,6 +151,19 @@ export function Projects() {
             className="w-full text-[20px] font-medium text-tx-primary placeholder:text-tx-muted/50 bg-transparent outline-none py-2"
             autoFocus
           />
+        </BottomSheetField>
+        
+        <BottomSheetField label="Client (Optional)">
+          <select
+            value={form.clientId}
+            onChange={(e) => setForm({ ...form, clientId: e.target.value })}
+            className="w-full bg-surface-neutral text-tx-primary px-4 py-2 rounded-xl outline-none"
+          >
+            <option value="">No Client</option>
+            {clients.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </BottomSheetField>
         
         <BottomSheetField label="Priority">
@@ -187,17 +212,30 @@ export function Projects() {
         
         {editingProj && (
            <button 
-             onClick={() => {
-               deleteProject(editingProj.id);
-               setSheetOpen(false);
-               showToast({ message: 'Project deleted' });
-             }}
+             onClick={() => setDeleteConfirmOpen(true)}
              className="w-full py-3 mt-4 rounded-xl border border-red-500/20 text-red-500 font-medium text-[15px]"
            >
              Delete Project
            </button>
         )}
       </BottomSheet>
+
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={() => {
+          if (editingProj) {
+            deleteProject(editingProj.id);
+            setSheetOpen(false);
+            setDeleteConfirmOpen(false);
+            showToast({ message: 'Project deleted' });
+          }
+        }}
+        title="Delete Project"
+        body="Are you sure you want to delete this project? This action cannot be undone."
+        confirmLabel="Delete"
+        danger
+      />
     </div>
   );
 }

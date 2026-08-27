@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { EventItem } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { generateId } from '../utils';
 
 interface CalendarContextType {
   events: EventItem[];
@@ -15,7 +16,7 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useLocalStorage<EventItem[]>('conneq-events', []);
 
   const addEvent = (event: Omit<EventItem, 'id'>) => {
-    const newEvent: EventItem = { ...event, id: Math.random().toString(36).substr(2, 9) };
+    const newEvent: EventItem = { ...event, id: generateId() };
     setEvents((prev) => [...prev, newEvent]);
   };
 

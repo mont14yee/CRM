@@ -27,6 +27,7 @@ export interface ProjectItem {
   priority: 'high' | 'low';
   completionPct: number;
   tone: Tone;
+  clientId?: string;
 }
 
 export interface RevenueMonth {
@@ -44,6 +45,7 @@ export interface RevenueEntry {
   status: 'Paid' | 'Pending' | 'Overdue';
   invoiceNumber?: string;
   notes?: string;
+  clientId?: string;
 }
 
 export interface EventItem {
@@ -55,6 +57,7 @@ export interface EventItem {
   time?: string;
   repeat: string;
   notes?: string;
+  clientId?: string;
 }
 
 export interface TimeEntry {
@@ -64,6 +67,25 @@ export interface TimeEntry {
   durationSeconds: number;
   billable: boolean;
   note?: string;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  company: string;
+  email: string;
+  phone: string;
+  status: 'Lead' | 'Active' | 'Past';
+  avatar?: string;
+}
+
+export interface ClientMessage {
+  id: string;
+  clientId: string;
+  content: string;
+  timestamp: string;
+  channel: 'Email' | 'SMS' | 'Call' | 'Meeting' | 'Note';
+  isOutbound: boolean;
 }
 
 export interface UserPreferences {
@@ -76,7 +98,7 @@ export interface UserPreferences {
   categories: Category[];
 }
 
-export type TabState = 'dashboard' | 'projects' | 'tools' | 'messages';
+export type TabState = 'dashboard' | 'projects' | 'tools' | 'messages' | 'clients' | 'profile';
 export type PushedScreenState = 'none' | 'tasks' | 'calendar' | 'finance' | 'time-tracker' | 'settings';
 
 

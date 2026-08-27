@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { X, MoreVertical, Plus, ChevronDown } from 'lucide-react';
 import { Header, StatCard, ListRow } from '../components/Shared';
 import { BottomSheet, BottomSheetField, CategoryPicker } from '../components/BottomSheet';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { usePreferences } from '../context/PreferencesContext';
 import { useToast } from '../context/ToastContext';
 import { useTasks } from '../context/TasksContext';
@@ -10,6 +11,8 @@ import { TaskItem } from '../types';
 export function Tasks({ onDismiss }: { onDismiss: () => void }) {
   const [tab, setTab] = useState('Today');
   const [isSheetOpen, setSheetOpen] = useState(false);
+  const [isDeleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<TaskItem | null>(null);
   const [showMoreDetails, setShowMoreDetails] = useState(false);
 
@@ -75,8 +78,17 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
   };
 
   const handleDelete = (id: string) => {
-    deleteTask(id);
-    showToast({ message: 'Task deleted' });
+    setTaskToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteTask = () => {
+    if (taskToDelete) {
+      deleteTask(taskToDelete);
+      showToast({ message: 'Task deleted' });
+      setTaskToDelete(null);
+    }
+    setDeleteConfirmOpen(false);
   };
 
   const handleComplete = (id: string) => {
@@ -251,6 +263,16 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
           </>
         )}
       </BottomSheet>
+
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={confirmDeleteTask}
+        title="Delete Task"
+        body="Are you sure you want to delete this task? This action cannot be undone."
+        confirmLabel="Delete"
+        danger
+      />
     </div>
   );
 }

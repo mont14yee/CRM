@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { RevenueEntry } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { generateId } from '../utils';
 
 interface RevenueContextType {
   revenues: RevenueEntry[];
@@ -18,7 +19,7 @@ export function RevenueProvider({ children }: { children: ReactNode }) {
   const [yearlyGoal, setYearlyGoal] = useLocalStorage<number>('conneq-yearly-goal', 8367);
 
   const addRevenue = (revenue: Omit<RevenueEntry, 'id'>) => {
-    const newRevenue: RevenueEntry = { ...revenue, id: Math.random().toString(36).substr(2, 9) };
+    const newRevenue: RevenueEntry = { ...revenue, id: generateId() };
     setRevenues((prev) => [...prev, newRevenue]);
   };
 

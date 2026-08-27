@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { TaskItem } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { generateId } from '../utils';
 
 interface TasksContextType {
   tasks: TaskItem[];
@@ -16,7 +17,7 @@ export function TasksProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useLocalStorage<TaskItem[]>('conneq-tasks', []);
 
   const addTask = (task: Omit<TaskItem, 'id'>) => {
-    const newTask: TaskItem = { ...task, id: Math.random().toString(36).substr(2, 9) };
+    const newTask: TaskItem = { ...task, id: generateId() };
     setTasks((prev) => [...prev, newTask]);
   };
 

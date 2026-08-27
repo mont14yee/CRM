@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, Wrench, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Wrench, Users } from 'lucide-react';
 import { TabState } from '../types';
 
 export function Navigation({
@@ -12,7 +12,7 @@ export function Navigation({
     { id: 'dashboard', icon: LayoutDashboard },
     { id: 'projects', icon: FolderKanban },
     { id: 'tools', icon: Wrench },
-    { id: 'messages', icon: MessageSquare },
+    { id: 'clients', icon: Users },
   ] as const;
 
   return (

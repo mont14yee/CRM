@@ -1,30 +1,45 @@
 import { useState, useMemo } from 'react';
-import { X, MoreVertical, Search, Calendar as CalendarIcon, Plus } from 'lucide-react';
+import { X, Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Header, DayAgendaRow } from '../components/Shared';
 import { BottomSheet, BottomSheetField, CategoryPicker } from '../components/BottomSheet';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { usePreferences } from '../context/PreferencesContext';
 import { useToast } from '../context/ToastContext';
 import { useCalendar } from '../context/CalendarContext';
+import { useClients } from '../context/ClientsContext';
 import { EventItem } from '../types';
+import { getMonthGrid, formatMonthYear, getTodayDateStr } from '../utils/date';
+import { SearchPicker } from '../components/SearchPicker';
 
 export function Calendar({ onDismiss }: { onDismiss: () => void }) {
-  const [tab, setTab] = useState('Calendar');
+  const [tab, setTab] = useState<'Month' | 'Agenda'>('Month');
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d;
+  });
+  
   const [isSheetOpen, setSheetOpen] = useState(false);
+  const [isDeleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [showMoreDetails, setShowMoreDetails] = useState(false);
+  const [search, setSearch] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   const { preferences, addCategory } = usePreferences();
   const { showToast } = useToast();
   const { events, addEvent, updateEvent, deleteEvent } = useCalendar();
+  const { clients } = useClients();
 
   const [form, setForm] = useState({
     title: '',
     category: '',
     allDay: false,
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayDateStr(),
     time: '',
     repeat: 'None',
     notes: '',
+    clientId: '',
   });
 
   const handleOpenSheet = (event?: EventItem) => {
@@ -38,6 +53,7 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
         time: event.time || '',
         repeat: event.repeat || 'None',
         notes: event.notes || '',
+        clientId: event.clientId || '',
       });
     } else {
       setEditingEvent(null);
@@ -45,10 +61,11 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
         title: '', 
         category: '', 
         allDay: false, 
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayDateStr(),
         time: '',
         repeat: 'None',
-        notes: ''
+        notes: '',
+        clientId: '',
       });
     }
     setShowMoreDetails(false);
@@ -61,26 +78,21 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
       return;
     }
     
+    const eventData = {
+        title: form.title,
+        categoryId: form.category,
+        allDay: form.allDay,
+        date: form.date,
+        time: form.time,
+        repeat: form.repeat,
+        notes: form.notes,
+        clientId: form.clientId || undefined,
+    };
+    
     if (editingEvent) {
-      updateEvent(editingEvent.id, {
-        title: form.title,
-        categoryId: form.category,
-        allDay: form.allDay,
-        date: form.date,
-        time: form.time,
-        repeat: form.repeat,
-        notes: form.notes,
-      });
+      updateEvent(editingEvent.id, eventData);
     } else {
-      addEvent({
-        title: form.title,
-        categoryId: form.category,
-        allDay: form.allDay,
-        date: form.date,
-        time: form.time,
-        repeat: form.repeat,
-        notes: form.notes,
-      });
+      addEvent(eventData);
     }
     setSheetOpen(false);
     showToast({
@@ -91,18 +103,34 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
   };
 
   const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  const grid = Array.from({ length: 35 }, (_, i) => i - 2);
+  const grid = useMemo(() => getMonthGrid(currentMonth.getFullYear(), currentMonth.getMonth()), [currentMonth]);
+  
+  const handlePrevMonth = () => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+  
+  const handleNextMonth = () => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
 
-  // Group events by date for rendering DayAgendaRow
+  const handleJumpToToday = () => {
+    const d = new Date();
+    d.setDate(1);
+    setCurrentMonth(d);
+  };
+
   const eventsByDate = useMemo(() => {
     const map = new Map<string, typeof events>();
+    
     events.forEach(e => {
+      if (search && !e.title.toLowerCase().includes(search.toLowerCase())) return;
+      
       const arr = map.get(e.date) || [];
       arr.push(e);
       map.set(e.date, arr);
     });
     return map;
-  }, [events]);
+  }, [events, search]);
 
   const sortedDates = Array.from(eventsByDate.keys()).sort();
 
@@ -116,102 +144,122 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
         }
         title="Calendar"
         rightIcon={
-          <button className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary">
-            <MoreVertical size={20} />
+          <button onClick={() => handleOpenSheet()} className="w-11 h-11 rounded-full bg-tx-primary flex items-center justify-center text-tx-inverse">
+            <Plus size={20} />
           </button>
         }
       />
 
-      <div className="flex items-center justify-between px-5 mt-2 mb-6">
-        <div className="flex bg-surface-neutral rounded-full p-1 w-64">
-          {['Today', 'Calendar'].map((opt) => (
-            <button
-              key={opt}
-              onClick={() => setTab(opt)}
-              className={`flex-1 py-2.5 text-center text-[15px] font-medium rounded-full transition-colors ${
-                tab === opt ? 'bg-canvas text-tx-primary shadow-sm' : 'text-tx-muted'
-              }`}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-        <button className="w-11 h-11 rounded-full bg-surface-neutral text-tx-primary flex items-center justify-center shrink-0">
-          <Search size={20} />
-        </button>
-      </div>
-
-      <div className="px-5 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-[20px] font-semibold text-tx-primary">May 2025</h2>
-          <button className="w-10 h-10 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary">
-            <CalendarIcon size={18} />
+      <div className="flex flex-col gap-4 px-5 mt-2 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex bg-surface-neutral rounded-full p-1 w-64">
+            {['Month', 'Agenda'].map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setTab(opt as 'Month' | 'Agenda')}
+                className={`flex-1 py-2 text-center text-[14px] font-medium rounded-full transition-colors ${
+                  tab === opt ? 'bg-canvas text-tx-primary shadow-sm' : 'text-tx-muted'
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setIsSearching(!isSearching)} className="w-10 h-10 rounded-full bg-surface-neutral text-tx-primary flex items-center justify-center shrink-0">
+            <Search size={18} />
           </button>
         </div>
         
-        <div className="grid grid-cols-7 mb-4 text-center text-[13px] font-medium text-tx-muted">
-          {days.map((d, i) => <div key={i}>{d}</div>)}
-        </div>
-        
-        <div className="grid grid-cols-7 gap-y-4 text-center">
-          {grid.map((num, i) => {
-            const isAdj = num <= 0 || num > 31;
-            const displayNum = isAdj ? (num <= 0 ? 30 + num : num - 31) : num;
-            
-            // Just simulate "today" is May 17, 2025 for grid visual mapping
-            const isToday = num === 17;
-            const dateStr = `2025-05-${displayNum.toString().padStart(2, '0')}`;
-            const hasEvent = !isAdj && eventsByDate.has(dateStr);
+        {isSearching && (
+          <div className="flex items-center gap-3 bg-surface-neutral rounded-[20px] px-4 py-3 border border-transparent focus-within:border-bd-subtle transition-colors animate-in fade-in">
+            <Search size={20} className="text-tx-muted" />
+            <input
+              type="text"
+              placeholder="Search events..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-transparent border-none outline-none text-[15px] flex-1 text-tx-primary"
+              autoFocus
+            />
+          </div>
+        )}
+      </div>
 
-            return (
-              <div key={i} className="flex flex-col items-center justify-center relative h-10">
-                <div className={`w-8 h-8 flex items-center justify-center rounded-full text-[15px] font-medium ${
-                  isToday ? 'bg-accent-primary text-tx-primary' :
-                  isAdj ? 'text-tx-muted/50' : 'text-tx-primary'
-                }`}>
-                  {displayNum}
+      {tab === 'Month' ? (
+        <div className="px-5 mb-8 animate-in fade-in">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-[20px] font-semibold text-tx-primary">{formatMonthYear(currentMonth)}</h2>
+            <div className="flex items-center gap-2">
+              <button onClick={handleJumpToToday} className="px-3 py-1.5 rounded-full bg-surface-neutral text-[13px] font-medium text-tx-primary">
+                Today
+              </button>
+              <div className="flex items-center bg-surface-neutral rounded-full">
+                <button onClick={handlePrevMonth} className="w-10 h-10 flex items-center justify-center text-tx-primary rounded-full active:bg-tx-primary/10">
+                  <ChevronLeft size={20} />
+                </button>
+                <button onClick={handleNextMonth} className="w-10 h-10 flex items-center justify-center text-tx-primary rounded-full active:bg-tx-primary/10">
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-7 mb-4 text-center text-[13px] font-medium text-tx-muted">
+            {days.map((d, i) => <div key={i}>{d}</div>)}
+          </div>
+          
+          <div className="grid grid-cols-7 gap-y-4 text-center">
+            {grid.map((cell, i) => {
+              const isToday = cell.dateStr === getTodayDateStr();
+              const hasEvent = eventsByDate.has(cell.dateStr);
+
+              return (
+                <div key={i} className="flex flex-col items-center justify-center relative h-10">
+                  <div className={`w-8 h-8 flex items-center justify-center rounded-full text-[15px] font-medium ${
+                    isToday ? 'bg-accent-primary text-tx-primary' :
+                    !cell.isCurrentMonth ? 'text-tx-muted/50' : 'text-tx-primary'
+                  }`}>
+                    {cell.day}
+                  </div>
+                  {hasEvent && !isToday && (
+                    <div className="absolute bottom-0 w-1.5 h-1.5 rounded-full bg-tx-primary" />
+                  )}
                 </div>
-                {hasEvent && !isToday && (
-                  <div className="absolute bottom-0 w-1.5 h-1.5 rounded-full bg-tx-primary" />
-                )}
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-2 animate-in fade-in">
+          <div className="px-5 flex items-center justify-between mb-4">
+            <h2 className="text-[17px] font-medium text-tx-primary">Upcoming Events</h2>
+          </div>
+          
+          {sortedDates.map(date => {
+            const dateEvents = eventsByDate.get(date)!;
+            const dateObj = new Date(date + 'T00:00:00');
+            const dateDisplay = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+            const weekday = dateObj.toLocaleDateString('en-GB', { weekday: 'long' });
+            
+            return (
+              <div key={date}>
+                <DayAgendaRow
+                  date={dateDisplay}
+                  weekday={weekday}
+                  events={dateEvents.map(e => ({ 
+                    time: e.allDay ? 'All Day' : e.time || '', 
+                    label: e.title,
+                    onClick: () => handleOpenSheet(e)
+                  }))}
+                />
               </div>
             );
           })}
+          {sortedDates.length === 0 && (
+            <div className="text-center text-tx-muted py-8 text-[15px]">No events found.</div>
+          )}
         </div>
-      </div>
-
-      <div className="mt-2">
-        <div className="px-5 flex items-center justify-between mb-4">
-          <h2 className="text-[17px] font-medium text-tx-primary">Monthly Tasks</h2>
-          <button onClick={() => handleOpenSheet()} className="text-[20px] text-tx-primary">
-            +
-          </button>
-        </div>
-        
-        {sortedDates.map(date => {
-          const dateEvents = eventsByDate.get(date)!;
-          const dateObj = new Date(date + 'T00:00:00');
-          const dateDisplay = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-          const weekday = dateObj.toLocaleDateString('en-GB', { weekday: 'long' });
-          
-          return (
-            <div key={date}>
-              <DayAgendaRow
-                date={dateDisplay}
-                weekday={weekday}
-                events={dateEvents.map(e => ({ 
-                  time: e.allDay ? 'All Day' : e.time || '', 
-                  label: e.title,
-                  onClick: () => handleOpenSheet(e)
-                }))}
-              />
-            </div>
-          );
-        })}
-        {sortedDates.length === 0 && (
-          <div className="text-center text-tx-muted py-8 text-[15px]">No events found.</div>
-        )}
-      </div>
+      )}
 
       <BottomSheet
         isOpen={isSheetOpen}
@@ -283,6 +331,15 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
           </button>
         ) : (
           <>
+            <BottomSheetField label="Link Client">
+              <SearchPicker
+                items={clients.map(c => ({ id: c.id, label: c.name }))}
+                value={form.clientId}
+                onChange={(id) => setForm(f => ({ ...f, clientId: id }))}
+                placeholder="Select a client..."
+              />
+            </BottomSheetField>
+
             <BottomSheetField label="Repeat">
               <select 
                 value={form.repeat}
@@ -308,11 +365,7 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
             
             {editingEvent && (
                <button 
-                 onClick={() => {
-                   deleteEvent(editingEvent.id);
-                   setSheetOpen(false);
-                   showToast({ message: 'Event deleted' });
-                 }}
+                 onClick={() => setDeleteConfirmOpen(true)}
                  className="w-full py-3 mt-4 rounded-xl border border-red-500/20 text-red-500 font-medium text-[15px]"
                >
                  Delete Event
@@ -321,6 +374,23 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
           </>
         )}
       </BottomSheet>
+
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={() => {
+          if (editingEvent) {
+            deleteEvent(editingEvent.id);
+            setSheetOpen(false);
+            setDeleteConfirmOpen(false);
+            showToast({ message: 'Event deleted' });
+          }
+        }}
+        title="Delete Event"
+        body="Are you sure you want to delete this event? This action cannot be undone."
+        confirmLabel="Delete"
+        danger
+      />
     </div>
   );
 }

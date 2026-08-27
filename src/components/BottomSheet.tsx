@@ -15,7 +15,7 @@ export function BottomSheet({
   onClose: () => void;
   title: string;
   children: ReactNode;
-  onSave: () => void;
+  onSave?: () => void;
   saveLabel?: string;
   secondaryAction?: ReactNode;
 }) {
@@ -41,12 +41,14 @@ export function BottomSheet({
         </div>
         
         <div className="p-5 border-t border-bd-subtle bg-canvas shrink-0 flex flex-col gap-2">
-          <button
-            onClick={onSave}
-            className="w-full py-3.5 rounded-full bg-tx-primary text-tx-inverse text-[15px] font-medium"
-          >
-            {saveLabel}
-          </button>
+          {onSave && (
+            <button
+              onClick={onSave}
+              className="w-full py-3.5 rounded-full bg-tx-primary text-tx-inverse text-[15px] font-medium active:opacity-80 transition-opacity"
+            >
+              {saveLabel}
+            </button>
+          )}
           {secondaryAction}
         </div>
       </div>
@@ -54,9 +56,9 @@ export function BottomSheet({
   );
 }
 
-export function BottomSheetField({ label, children }: { label?: string; children: ReactNode }) {
+export function BottomSheetField({ label, children, className = '' }: { label?: string; children: ReactNode; className?: string }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={`flex flex-col gap-1.5 ${className}`}>
       {label && <label className="text-[13px] font-medium text-tx-muted">{label}</label>}
       {children}
     </div>

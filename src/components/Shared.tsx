@@ -112,25 +112,27 @@ export function ListRow({
   const startXRef = useRef(0);
   const currentXRef = useRef(0);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handlePointerDown = (e: React.PointerEvent) => {
     if (!swipeable) return;
-    startXRef.current = e.touches[0].clientX;
+    startXRef.current = e.clientX;
     currentXRef.current = startXRef.current;
     setIsSwiping(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (!isSwiping) return;
-    currentXRef.current = e.touches[0].clientX;
+    currentXRef.current = e.clientX;
     const diff = currentXRef.current - startXRef.current;
     if (diff < 0) {
       setOffset(Math.max(diff, -140));
     }
   };
 
-  const handleTouchEnd = () => {
+  const handlePointerUp = (e: React.PointerEvent) => {
     if (!isSwiping) return;
     setIsSwiping(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
     if (offset < -70) {
       setOffset(-140);
     } else {
@@ -143,13 +145,13 @@ export function ListRow({
       if (offset < 0) setOffset(0);
     };
     if (offset < 0) {
-      document.addEventListener('touchstart', handleGlobalClick);
+      document.addEventListener('pointerdown', handleGlobalClick);
     }
-    return () => document.removeEventListener('touchstart', handleGlobalClick);
+    return () => document.removeEventListener('pointerdown', handleGlobalClick);
   }, [offset]);
 
   return (
-    <div className="relative mb-2 rounded-[20px] overflow-hidden bg-surface-neutral border border-bd-subtle">
+    <div className="relative mb-2 rounded-[20px] overflow-hidden bg-surface-neutral border border-bd-subtle touch-pan-y">
       {/* Background Actions */}
       {swipeable && (
         <div className="absolute inset-0 flex justify-end items-center px-4 gap-4">
@@ -170,9 +172,10 @@ export function ListRow({
 
       {/* Foreground Row */}
       <div 
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         style={{ transform: `translateX(${offset}px)` }}
         className={`w-full flex items-center px-4 py-3 bg-canvas active:bg-canvas/80 transition-transform ${isSwiping ? 'duration-0' : 'duration-300'} ease-out`}
         onClick={(e) => {
@@ -273,10 +276,12 @@ export function DayAgendaRow({
   date,
   weekday,
   events,
+  key,
 }: {
   date: string;
   weekday: string;
   events: { time: string; label: string; onClick?: () => void }[];
+  key?: React.Key;
 }) {
   return (
     <div className="flex flex-col gap-2 mb-6">
