@@ -33,6 +33,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   
   const [isDeleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isDiscardConfirmOpen, setDiscardConfirmOpen] = useState(false);
 
   const [clientForm, setClientForm] = useState({
     name: '',
@@ -75,7 +76,20 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
     setClientSheetOpen(true);
   };
 
-  const handleSaveClient = () => {
+
+  const checkDirtyAndClose = () => {
+    const isDirty = editingClient
+      ? clientForm.name !== editingClient.name || clientForm.company !== (editingClient.company || '') || clientForm.email !== (editingClient.email || '') || clientForm.phone !== (editingClient.phone || '') || clientForm.status !== editingClient.status
+      : clientForm.name !== '' || clientForm.company !== '' || clientForm.email !== '' || clientForm.phone !== '' || clientForm.status !== 'Lead';
+    
+    if (isDirty) {
+      setDiscardConfirmOpen(true);
+    } else {
+      setClientSheetOpen(false);
+    }
+  };
+
+  const handleSaveClient = (addAnother = false) => {
     if (!clientForm.name) return;
     if (editingClient) {
       updateClient(editingClient.id, clientForm);
@@ -84,7 +98,13 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
       addClient(clientForm);
       showToast({ message: 'Client created' });
     }
-    setClientSheetOpen(false);
+    
+    if (addAnother === true) {
+      setClientForm({ name: '', company: '', email: '', phone: '', status: 'Lead' });
+      setEditingClient(null);
+    } else {
+      setClientSheetOpen(false);
+    }
   };
 
   const handleDeleteClient = () => {
@@ -191,9 +211,19 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
       {/* Client Create/Edit Sheet */}
       <BottomSheet
         isOpen={isClientSheetOpen}
-        onClose={() => setClientSheetOpen(false)}
+        onClose={checkDirtyAndClose}
         title={editingClient ? 'Edit Client' : 'New Client'}
-        onSave={handleSaveClient}
+        onSave={() => handleSaveClient(false)}
+        secondaryAction={
+          !editingClient ? (
+            <button
+              onClick={() => handleSaveClient(true)}
+              className="w-full py-3.5 rounded-full bg-surface-neutral text-tx-primary text-[15px] font-medium active:opacity-80 transition-opacity"
+            >
+              Save & Add Another
+            </button>
+          ) : undefined
+        }
       >
         <BottomSheetField label="Full Name">
           <input
@@ -257,6 +287,19 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
         )}
       </BottomSheet>
 
+      <ConfirmDialog
+        isOpen={isDiscardConfirmOpen}
+        title="Discard Changes?"
+        body="You have unsaved changes. Are you sure you want to discard them?"
+        confirmLabel="Discard"
+        cancelLabel="Keep Editing"
+        onClose={() => setDiscardConfirmOpen(false)}
+        onConfirm={() => {
+          setDiscardConfirmOpen(false);
+          setClientSheetOpen(false);
+        }}
+      />
+      
       <ConfirmDialog
         isOpen={isDeleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}

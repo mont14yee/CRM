@@ -272,17 +272,11 @@ export function CircularProgress({
   );
 }
 
-export function DayAgendaRow({
-  date,
-  weekday,
-  events,
-  key,
-}: {
+export const DayAgendaRow: React.FC<{
   date: string;
   weekday: string;
   events: { time: string; label: string; onClick?: () => void }[];
-  key?: React.Key;
-}) {
+}> = ({ date, weekday, events }) => {
   return (
     <div className="flex flex-col gap-2 mb-6">
       <div className="px-5 text-[15px] font-medium text-tx-primary">

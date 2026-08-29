@@ -17,6 +17,7 @@ export function Projects() {
   
   const [isSheetOpen, setSheetOpen] = useState(false);
   const [isDeleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isDiscardConfirmOpen, setDiscardConfirmOpen] = useState(false);
   const [editingProj, setEditingProj] = useState<ProjectItem | null>(null);
 
   const [form, setForm] = useState({
@@ -44,7 +45,20 @@ export function Projects() {
     setSheetOpen(true);
   };
 
-  const handleSave = () => {
+
+  const checkDirtyAndClose = () => {
+    const isDirty = editingProj 
+      ? form.name !== editingProj.name || form.priority !== editingProj.priority || form.completionPct !== String(editingProj.completionPct) || form.tone !== editingProj.tone || form.clientId !== (editingProj.clientId || '')
+      : form.name !== '' || form.priority !== 'low' || form.completionPct !== '0' || form.tone !== 'lime' || form.clientId !== '';
+    
+    if (isDirty) {
+      setDiscardConfirmOpen(true);
+    } else {
+      setSheetOpen(false);
+    }
+  };
+
+  const handleSave = (addAnother = false) => {
     if (!form.name.trim()) return;
 
     if (editingProj) {
@@ -64,8 +78,15 @@ export function Projects() {
         clientId: form.clientId || undefined,
       });
     }
-    setSheetOpen(false);
+    
     showToast({ message: editingProj ? 'Project updated' : 'Project created' });
+    
+    if (addAnother === true) {
+      setForm({ name: '', priority: 'low', completionPct: '0', tone: 'lime', clientId: '' });
+      setEditingProj(null);
+    } else {
+      setSheetOpen(false);
+    }
   };
 
   return (
@@ -138,9 +159,19 @@ export function Projects() {
 
       <BottomSheet
         isOpen={isSheetOpen}
-        onClose={() => setSheetOpen(false)}
+        onClose={checkDirtyAndClose}
         title={editingProj ? 'Edit Project' : 'New Project'}
-        onSave={handleSave}
+        onSave={() => handleSave(false)}
+        secondaryAction={
+          !editingProj ? (
+            <button
+              onClick={() => handleSave(true)}
+              className="w-full py-3.5 rounded-full bg-surface-neutral text-tx-primary text-[15px] font-medium active:opacity-80 transition-opacity"
+            >
+              Save & Add Another
+            </button>
+          ) : undefined
+        }
       >
         <BottomSheetField>
           <input
@@ -220,6 +251,19 @@ export function Projects() {
         )}
       </BottomSheet>
 
+      <ConfirmDialog
+        isOpen={isDiscardConfirmOpen}
+        title="Discard Changes?"
+        body="You have unsaved changes. Are you sure you want to discard them?"
+        confirmLabel="Discard"
+        cancelLabel="Keep Editing"
+        onClose={() => setDiscardConfirmOpen(false)}
+        onConfirm={() => {
+          setDiscardConfirmOpen(false);
+          setSheetOpen(false);
+        }}
+      />
+      
       <ConfirmDialog
         isOpen={isDeleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
