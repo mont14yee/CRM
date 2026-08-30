@@ -1,3 +1,4 @@
+import { getTodayDateStr } from "../utils/date";
 import React, { useState, useRef } from 'react';
 import { X, MoreVertical, Sparkles, User, Signal, Palette, Landmark, Settings2, ChevronLeft, Trash2, Download, Upload, AlertCircle } from 'lucide-react';
 import { Header, ListRow, CircularProgress } from '../components/Shared';
@@ -5,7 +6,7 @@ import { usePreferences } from '../context/PreferencesContext';
 import { useProfile } from '../context/ProfileContext';
 import { BottomSheet, BottomSheetField } from '../components/BottomSheet';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { generateId } from '../utils';
+import { generateId } from '../utils/id';
 import { useToast } from '../context/ToastContext';
 
 function PreferencesScreen({ onBack }: { onBack: () => void }) {
@@ -13,10 +14,14 @@ function PreferencesScreen({ onBack }: { onBack: () => void }) {
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState('#3b82f6');
-  const [newCategoryScope, setNewCategoryScope] = useState<'work' | 'personal'>('work');
+  const [newCategoryScope, setNewCategoryScope] = useState<'task' | 'event' | 'revenue'>('task');
+  const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
 
-  const handleDeleteCategory = (id: string) => {
-    updatePreferences({ categories: preferences.categories.filter(c => c.id !== id) });
+  const handleDeleteCategory = () => {
+    if (deleteCategoryId) {
+      updatePreferences({ categories: preferences.categories.filter(c => c.id !== deleteCategoryId) });
+      setDeleteCategoryId(null);
+    }
   };
 
   const handleSaveCategory = () => {
@@ -117,7 +122,7 @@ function PreferencesScreen({ onBack }: { onBack: () => void }) {
                     <div className="text-[12px] text-tx-muted capitalize">{c.scope}</div>
                   </div>
                 </div>
-                <button onClick={() => handleDeleteCategory(c.id)} className="text-tx-muted hover:text-red-500 transition-colors p-2">
+                <button onClick={() => setDeleteCategoryId(c.id)} className="text-tx-muted hover:text-red-500 transition-colors p-2">
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -160,24 +165,38 @@ function PreferencesScreen({ onBack }: { onBack: () => void }) {
               onChange={e => setNewCategoryScope(e.target.value as any)}
               className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none text-tx-primary h-12"
             >
-              <option value="work">Work</option>
-              <option value="personal">Personal</option>
+              <option value="task">Task</option>
+              <option value="event">Event</option>
+              <option value="revenue">Revenue</option>
             </select>
           </BottomSheetField>
         </div>
       </BottomSheet>
+
+      <ConfirmDialog
+        isOpen={!!deleteCategoryId}
+        onCancel={() => setDeleteCategoryId(null)}
+        onConfirm={handleDeleteCategory}
+        title="Delete Category?"
+        body="Are you sure you want to delete this category?"
+        confirmLabel="Delete"
+        danger
+      />
     </div>
   );
 }
 
 export function Settings({ onDismiss }: { onDismiss: () => void }) {
-  const { name, email, businessName, avatarUrl, updateProfile } = useProfile();
+  const { profile, updateProfile } = useProfile();
+  const { name, email, businessName, avatarSeed } = profile;
   const { showToast } = useToast();
   
   const [activeScreen, setActiveScreen] = useState<'main' | 'preferences'>('main');
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isClearDataOpen, setIsClearDataOpen] = useState(false);
+  const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
+  const [importDataContent, setImportDataContent] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -200,7 +219,7 @@ export function Settings({ onDismiss }: { onDismiss: () => void }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `conneq-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `conneq-backup-${getTodayDateStr()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     showToast({ message: 'Data exported successfully' });
@@ -211,19 +230,28 @@ export function Settings({ onDismiss }: { onDismiss: () => void }) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string);
-        for (const [key, value] of Object.entries(data)) {
-          if (key.startsWith('conneq-')) {
-            localStorage.setItem(key, value as string);
-          }
-        }
-        window.location.reload();
-      } catch (err) {
-        showToast({ message: 'Failed to parse backup file' });
-      }
+      setImportDataContent(e.target?.result as string);
+      setIsImportConfirmOpen(true);
     };
     reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const confirmImport = () => {
+    if (!importDataContent) return;
+    try {
+      const data = JSON.parse(importDataContent);
+      for (const [key, value] of Object.entries(data)) {
+        if (key.startsWith('conneq-')) {
+          localStorage.setItem(key, value as string);
+        }
+      }
+      window.location.reload();
+    } catch (err) {
+      showToast({ message: 'Failed to parse backup file' });
+      setIsImportConfirmOpen(false);
+      setImportDataContent(null);
+    }
   };
 
   const handleClearData = () => {
@@ -274,23 +302,11 @@ export function Settings({ onDismiss }: { onDismiss: () => void }) {
 
       <div className="px-5 flex flex-col gap-6 mt-2 pb-12">
         <div className="flex items-center gap-4">
-          <img src={avatarUrl} alt="Avatar" className="w-16 h-16 rounded-full object-cover bg-surface-neutral" />
+          <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${avatarSeed}`} alt="Avatar" className="w-16 h-16 rounded-full object-cover bg-surface-neutral" />
           <div>
             <div className="text-[20px] font-semibold text-tx-primary">{name}</div>
             <div className="text-[14px] text-tx-muted mt-0.5">{email}</div>
           </div>
-        </div>
-
-        <div className="bg-surface-neutral rounded-[24px] p-5 flex items-center justify-between">
-          <div>
-            <div className="text-[16px] font-medium text-tx-primary mb-1">7 days left in your trial.</div>
-            <button className="text-[14px] font-medium text-tx-muted underline underline-offset-2">
-              Continue Setup
-            </button>
-          </div>
-          <CircularProgress progress={62} size={56} strokeWidth={4}>
-            <span className="text-[13px] font-medium text-tx-primary">62%</span>
-          </CircularProgress>
         </div>
 
         <div className="mt-2 flex flex-col gap-2">
@@ -384,13 +400,27 @@ export function Settings({ onDismiss }: { onDismiss: () => void }) {
 
       <ConfirmDialog
         isOpen={isClearDataOpen}
-        onClose={() => setIsClearDataOpen(false)}
+        onCancel={() => setIsClearDataOpen(false)}
         title="Clear All Data?"
         body="This will permanently delete all your clients, projects, tasks, and settings from this browser. This action cannot be undone."
         confirmLabel="Yes, delete everything"
         cancelLabel="Cancel"
         danger
         onConfirm={handleClearData}
+      />
+      
+      <ConfirmDialog
+        isOpen={isImportConfirmOpen}
+        onCancel={() => {
+          setIsImportConfirmOpen(false);
+          setImportDataContent(null);
+        }}
+        title="Import Data?"
+        body="This will overwrite your existing data. Are you sure you want to proceed?"
+        confirmLabel="Yes, import data"
+        cancelLabel="Cancel"
+        danger
+        onConfirm={confirmImport}
       />
     </div>
   );

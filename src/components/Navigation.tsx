@@ -25,6 +25,7 @@ export function Navigation({
             key={tab.id}
             onClick={() => onChange(tab.id as TabState)}
             className="flex flex-col items-center justify-center w-14 h-14 rounded-full transition-colors relative"
+            aria-label={`Go to ${tab.id} tab`}
           >
             <div
               className={`absolute inset-0 rounded-full transition-opacity ${

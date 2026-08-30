@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { EventItem } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { generateId } from '../utils';
+import { generateId } from '../utils/id';
 
 interface CalendarContextType {
   events: EventItem[];

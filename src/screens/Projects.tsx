@@ -123,11 +123,11 @@ export function Projects() {
               <div className="flex items-center gap-3">
                 {proj.clientId && (
                   <button onClick={() => goToClient(proj.clientId!)} className="w-10 h-10 rounded-full overflow-hidden bg-surface-neutral active:opacity-80">
-                    <img src={clients.find(c => c.id === proj.clientId)?.avatarUrl || `https://i.pravatar.cc/150?u=${proj.clientId}`} alt="client" className="w-full h-full object-cover" />
+                    <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${clients.find(c => c.id === proj.clientId)?.avatarSeed || proj.clientId}`} alt="client" className="w-full h-full object-cover" />
                   </button>
                 )}
                 {!proj.clientId && (
-                  <img src={`https://i.pravatar.cc/150?u=${proj.id}`} alt="client" className="w-10 h-10 rounded-full object-cover bg-canvas" />
+                  <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${proj.id}`} alt="client" className="w-10 h-10 rounded-full object-cover bg-canvas" />
                 )}
                 <div className={`px-3 py-1.5 rounded-full text-[12px] font-medium ${
                   proj.priority === 'high' ? 'bg-canvas text-tx-primary' : 'bg-canvas/50 text-tx-muted'
@@ -257,7 +257,7 @@ export function Projects() {
         body="You have unsaved changes. Are you sure you want to discard them?"
         confirmLabel="Discard"
         cancelLabel="Keep Editing"
-        onClose={() => setDiscardConfirmOpen(false)}
+        onCancel={() => setDiscardConfirmOpen(false)}
         onConfirm={() => {
           setDiscardConfirmOpen(false);
           setSheetOpen(false);
@@ -266,7 +266,7 @@ export function Projects() {
       
       <ConfirmDialog
         isOpen={isDeleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
+        onCancel={() => setDeleteConfirmOpen(false)}
         onConfirm={() => {
           if (editingProj) {
             deleteProject(editingProj.id);

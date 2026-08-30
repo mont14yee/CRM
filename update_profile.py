@@ -1,4 +1,9 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import re
+
+with open('src/context/ProfileContext.tsx', 'r') as f:
+    content = f.read()
+
+new_content = """import React, { createContext, useContext, ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { UserProfile } from '../types';
 
@@ -35,3 +40,8 @@ export function useProfile() {
   }
   return context;
 }
+"""
+
+with open('src/context/ProfileContext.tsx', 'w') as f:
+    f.write(new_content)
+

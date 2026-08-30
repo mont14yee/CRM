@@ -14,14 +14,15 @@ import { getRecentMonths, getTodayDateStr } from '../utils/date';
 import { useNavigation } from '../context/NavigationContext';
 
 export function Dashboard({ onPush }: { onPush: (screen: PushedScreenState) => void }) {
-  const { name, avatarUrl } = useProfile();
+  const { profile } = useProfile();
+  const { name, avatarSeed } = profile;
   const { preferences } = usePreferences();
   const { tasks } = useTasks();
   const { revenues } = useRevenue();
   const { events } = useCalendar();
   const { clients } = useClients();
   const { projects } = useProjects();
-  const { goToTab } = useNavigation();
+  const { goToTab, goToClient } = useNavigation();
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,8 +72,8 @@ export function Dashboard({ onPush }: { onPush: (screen: PushedScreenState) => v
   const todaysTasks = tasks.filter(t => t.date && t.date.startsWith(todayDateStr)).length;
   
   // Leads
-  const newLeads = clients.filter(c => c.status === 'Lead').length;
-  const formattedLeads = newLeads.toString().padStart(2, '0');
+  const newLeads = clients.filter(c => c.status === 'lead').length;
+  const formattedLeads = newLeads.toString();
 
   // Finance Summary
   const currentMonth = new Date().getMonth();
@@ -80,8 +81,9 @@ export function Dashboard({ onPush }: { onPush: (screen: PushedScreenState) => v
   let thisMonthRevenue = 0;
   
   revenues.forEach(r => {
-    const d = new Date(r.date);
-    if (d.getMonth() === currentMonth && d.getFullYear() === currentYear && r.status === 'Paid') {
+    if (!r.date) return;
+    const [y, mStr] = r.date.split('-');
+    if (parseInt(mStr, 10) - 1 === currentMonth && parseInt(y, 10) === currentYear && r.status === 'Paid') {
       thisMonthRevenue += r.amount;
     }
   });
@@ -93,8 +95,9 @@ export function Dashboard({ onPush }: { onPush: (screen: PushedScreenState) => v
   const chartData = recent6Months.map(m => {
     let total = 0;
     revenues.forEach(r => {
-      const d = new Date(r.date);
-      if (d.getMonth() === m.month && d.getFullYear() === m.year && r.status === 'Paid') {
+      if (!r.date) return;
+      const [y, mStr] = r.date.split('-');
+      if (parseInt(mStr, 10) - 1 === m.month && parseInt(y, 10) === m.year && r.status === 'Paid') {
         total += r.amount;
       }
     });
@@ -118,7 +121,7 @@ export function Dashboard({ onPush }: { onPush: (screen: PushedScreenState) => v
       <Header
         leftIcon={
           <button onClick={() => onPush('settings')} className="w-11 h-11 rounded-full overflow-hidden bg-surface-neutral">
-            <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${avatarSeed}`} alt="Avatar" className="w-full h-full object-cover" />
           </button>
         }
         title={<span className="text-[17px] font-medium text-tx-primary">Hi, {name.split(' ')[0]}</span>}
@@ -233,7 +236,7 @@ export function Dashboard({ onPush }: { onPush: (screen: PushedScreenState) => v
                     <h3 className="text-[13px] font-medium text-tx-muted mb-3 uppercase tracking-wider">Clients</h3>
                     <div className="flex flex-col gap-2">
                       {searchResults.clients.map(c => (
-                        <div key={c.id} onClick={() => { setIsSearchOpen(false); goToTab('clients'); }} className="flex items-center gap-3 p-3 rounded-xl bg-surface-neutral active:opacity-80">
+                        <div key={c.id} onClick={() => { setIsSearchOpen(false); goToClient(c.id); }} className="flex items-center gap-3 p-3 rounded-xl bg-surface-neutral active:opacity-80">
                           <Users size={18} className="text-tx-muted" />
                           <div>
                             <div className="text-[15px] font-medium text-tx-primary">{c.name}</div>

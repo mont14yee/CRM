@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { X } from 'lucide-react';
 import { Header } from './Shared';
 
@@ -76,9 +76,20 @@ export function CategoryPicker({
   onChange: (id: string) => void;
   scope: 'task' | 'event' | 'revenue';
   categories: any[];
-  onAddCategory: () => void;
+  onAddCategory: (category: Omit<any, 'id'>) => void;
 }) {
+  const [isAdding, setIsAdding] = useState(false);
+  const [newLabel, setNewLabel] = useState('');
   const filtered = categories.filter((c) => c.scope === scope);
+
+  const handleAdd = () => {
+    if (newLabel.trim()) {
+      onAddCategory({ label: newLabel.trim(), color: '#888E80', scope });
+      setNewLabel('');
+    }
+    setIsAdding(false);
+  };
+
   return (
     <div className="flex flex-wrap gap-2">
       {filtered.map((cat) => (
@@ -97,12 +108,29 @@ export function CategoryPicker({
           </div>
         </button>
       ))}
-      <button
-        onClick={onAddCategory}
-        className="px-3 py-1.5 rounded-full text-[13px] font-medium bg-surface-neutral text-tx-primary border border-transparent"
-      >
-        + New
-      </button>
+      {isAdding ? (
+        <div className="flex items-center gap-1">
+          <input 
+            autoFocus
+            type="text"
+            value={newLabel}
+            onChange={e => setNewLabel(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAdd()}
+            placeholder="Name..."
+            className="px-3 py-1.5 rounded-full text-[13px] bg-canvas text-tx-primary border border-bd-subtle outline-none w-24"
+          />
+          <button onClick={handleAdd} className="px-3 py-1.5 rounded-full bg-tx-primary text-tx-inverse text-[13px] font-medium">
+             Add
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setIsAdding(true)}
+          className="px-3 py-1.5 rounded-full text-[13px] font-medium bg-surface-neutral text-tx-primary border border-transparent"
+        >
+          + New
+        </button>
+      )}
     </div>
   );
 }

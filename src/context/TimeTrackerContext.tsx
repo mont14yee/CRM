@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { TimeEntry } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { generateId } from '../utils';
+import { generateId } from '../utils/id';
 
 interface TimeTrackerContextType {
   timeEntries: TimeEntry[];
@@ -48,6 +48,29 @@ export function TimeTrackerProvider({ children }: { children: ReactNode }) {
       return () => clearInterval(interval);
     }
   }, [timerState]);
+
+  React.useEffect(() => {
+    let migrated = false;
+    const migratedEntries = timeEntries.map((e: any) => {
+      let changed = false;
+      const newE = { ...e };
+      if (newE.date && !newE.startedAt) {
+        newE.startedAt = newE.date;
+        delete newE.date;
+        changed = true;
+      }
+      if (newE.notes !== undefined && newE.note === undefined) {
+        newE.note = newE.notes;
+        delete newE.notes;
+        changed = true;
+      }
+      if (changed) migrated = true;
+      return newE;
+    });
+    if (migrated) {
+      setTimeEntries(migratedEntries);
+    }
+  }, [timeEntries, setTimeEntries]);
 
   const addTimeEntry = (entry: Omit<TimeEntry, 'id'>) => {
     const newEntry: TimeEntry = { ...entry, id: generateId() };

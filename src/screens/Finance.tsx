@@ -145,8 +145,8 @@ export function Finance({ onDismiss }: { onDismiss: () => void }) {
     const stats: Record<string, { total: number; overdue: number }> = {};
     
     effectiveRevenues.forEach(r => {
-      const d = new Date(r.date);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      const [y, m] = r.date.split('-');
+      const key = `${parseInt(y, 10)}-${parseInt(m, 10) - 1}`;
       if (!stats[key]) stats[key] = { total: 0, overdue: 0 };
       if (r.status === 'Paid') stats[key].total += r.amount;
       if (r.status === 'Overdue') stats[key].overdue += r.amount;
@@ -271,7 +271,7 @@ export function Finance({ onDismiss }: { onDismiss: () => void }) {
                 <div className="text-[13px] text-tx-muted flex items-center gap-1.5">
                   {r.clientOrProject || 'General'}
                   <span className="w-1 h-1 rounded-full bg-bd-subtle" />
-                  {new Date(r.date).toLocaleDateString()}
+                  {new Date(r.date + 'T00:00:00').toLocaleDateString()}
                 </div>
               </div>
               <div className={`px-2.5 py-1 rounded-full text-[11px] font-medium ${
@@ -314,7 +314,7 @@ export function Finance({ onDismiss }: { onDismiss: () => void }) {
             items={clients.map(c => ({ id: c.id, label: c.name }))}
             value={logForm.clientId}
             onChange={(id) => setLogForm(f => ({ ...f, clientId: id }))}
-            placeholder="Select a client..."
+            
           />
         </BottomSheetField>
 
@@ -399,7 +399,7 @@ export function Finance({ onDismiss }: { onDismiss: () => void }) {
 
       <ConfirmDialog
         isOpen={isDeleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
+        onCancel={() => setDeleteConfirmOpen(false)}
         onConfirm={handleDeleteEntry}
         title="Delete Revenue Entry"
         body="Are you sure you want to delete this revenue record? This cannot be undone."

@@ -1,3 +1,4 @@
+export type ClientStatus = 'lead' | 'active' | 'past';
 export type Tone = 'lime' | 'olive' | 'neutral';
 
 export interface Category {
@@ -18,6 +19,7 @@ export interface TaskItem {
   projectId?: string;
   repeat?: string;
   reminder?: number;
+  clientId?: string;
 }
 
 export interface ProjectItem {
@@ -72,20 +74,25 @@ export interface TimeEntry {
 export interface Client {
   id: string;
   name: string;
-  company: string;
-  email: string;
-  phone: string;
-  status: 'Lead' | 'Active' | 'Past';
-  avatar?: string;
+  company?: string;
+  email?: string;
+  phone?: string;
+  status: ClientStatus;
+  tags: string[];
+  notes?: string;
+  avatarSeed: string;
+  createdAt: string;
 }
 
-export interface ClientMessage {
+export type MessageChannel = 'note' | 'call' | 'email' | 'meeting' | 'sms';
+
+export interface MessageItem {
   id: string;
   clientId: string;
-  content: string;
-  timestamp: string;
-  channel: 'Email' | 'SMS' | 'Call' | 'Meeting' | 'Note';
-  isOutbound: boolean;
+  channel: MessageChannel;
+  body: string;
+  createdAt: string;
+  pinned?: boolean;
 }
 
 export interface UserPreferences {
@@ -98,7 +105,14 @@ export interface UserPreferences {
   categories: Category[];
 }
 
-export type TabState = 'dashboard' | 'projects' | 'tools' | 'messages' | 'clients' | 'profile';
+export type TabState = 'dashboard' | 'projects' | 'tools' | 'clients' | 'profile';
 export type PushedScreenState = 'none' | 'tasks' | 'calendar' | 'finance' | 'time-tracker' | 'settings';
 
 
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  businessName?: string;
+  avatarSeed: string;
+}

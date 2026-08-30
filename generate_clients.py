@@ -1,4 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import re
+
+content = """import React, { useState, useMemo, useEffect } from 'react';
 import {
   Users, Search, Plus, Phone, Mail, MoreVertical, X, ChevronLeft, 
   MessageSquare, PhoneCall, Video, Smartphone, StickyNote, Building2,
@@ -14,7 +16,6 @@ import { useRevenue } from '../context/RevenueContext';
 import { useNavigation } from '../context/NavigationContext';
 import { Client, ClientStatus, MessageChannel } from '../types';
 import { formatCurrency, formatCurrencyCompact, getCurrencySymbol } from '../utils/currency';
-import { generateId } from '../utils/id';
 import { usePreferences } from '../context/PreferencesContext';
 
 const STATUS_COLORS: Record<ClientStatus, string> = {
@@ -35,7 +36,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
   const { clients, addClient, updateClient, deleteClient } = useClients();
   const { messagesForClient, addMessage } = useMessages();
   const { projects } = useProjects();
-  const { revenues } = useRevenue();
+  const { entries } = useRevenue();
   const { preferences } = usePreferences();
   const { dismiss } = useNavigation(); // to clear if needed
 
@@ -118,7 +119,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
         email: selectedClient.email || '',
         phone: selectedClient.phone || '',
         status: selectedClient.status,
-        tags: [...(selectedClient.tags || [])],
+        tags: [...selectedClient.tags],
         notes: selectedClient.notes || ''
       });
       setEditingClientId(selectedClient.id);
@@ -132,7 +133,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
     if (editingClientId) {
       updateClient(editingClientId, form);
     } else {
-      addClient({ ...form, avatarSeed: generateId(), createdAt: new Date().toISOString() });
+      addClient(form);
     }
     setIsSheetOpen(false);
   };
@@ -225,9 +226,9 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
               {selectedClient.status}
             </div>
             
-            {(selectedClient.tags || []).length > 0 && (
+            {selectedClient.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 justify-center mb-6">
-                {(selectedClient.tags || []).map(t => (
+                {selectedClient.tags.map(t => (
                   <span key={t} className="px-2.5 py-1 bg-surface-neutral text-tx-secondary rounded-md text-[13px] font-medium border border-bd-subtle/50">
                     {t}
                   </span>
@@ -272,7 +273,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
               <span className="text-[13px] text-tx-muted font-medium mb-1">Total Billed</span>
               <span className="text-xl font-bold text-tx-primary">
                 {formatCurrencyCompact(
-                  revenues.filter(r => r.clientId === selectedClient.id && r.status === 'Paid').reduce((sum, r) => sum + r.amount, 0),
+                  entries.filter(r => r.clientId === selectedClient.id && r.status === 'Paid').reduce((sum, r) => sum + r.amount, 0),
                   preferences.currency
                 )}
               </span>
@@ -345,7 +346,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
       ) : (
         // --- LIST VIEW ---
         <>
-          <Header title="Clients" rightIcon={<>
+          <Header title="Clients">
             <div className="flex items-center gap-1">
               <button 
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -360,7 +361,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
                 <Plus size={22} />
               </button>
             </div>
-          </>} />
+          </Header>
 
           {isSearchOpen && (
             <div className="px-4 py-2 animate-in slide-in-from-top-2 duration-200">
@@ -563,3 +564,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
     </div>
   );
 }
+"""
+
+with open('src/screens/Clients.tsx', 'w') as f:
+    f.write(content)

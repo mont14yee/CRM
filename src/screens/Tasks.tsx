@@ -217,7 +217,7 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
             onChange={(c) => setForm({ ...form, category: c })}
             scope="task"
             categories={preferences.categories}
-            onAddCategory={() => addCategory({ label: 'New Category', color: '#888E80', scope: 'task' })}
+            onAddCategory={addCategory}
           />
         </BottomSheetField>
 
@@ -266,7 +266,7 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
 
       <ConfirmDialog
         isOpen={isDeleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
+        onCancel={() => setDeleteConfirmOpen(false)}
         onConfirm={confirmDeleteTask}
         title="Delete Task"
         body="Are you sure you want to delete this task? This action cannot be undone."

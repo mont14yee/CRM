@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { Client } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { generateId } from '../utils';
+import { generateId } from '../utils/id';
 
 interface ClientsContextValue {
   clients: Client[];
@@ -12,8 +12,10 @@ interface ClientsContextValue {
 
 const ClientsContext = createContext<ClientsContextValue | undefined>(undefined);
 
+const initialClients: Client[] = [];
+
 export function ClientsProvider({ children }: { children: ReactNode }) {
-  const [clients, setClients] = useLocalStorage<Client[]>('conneq-clients', []);
+  const [clients, setClients] = useLocalStorage<Client[]>('conneq-clients', initialClients);
 
   const addClient = (client: Omit<Client, 'id'>) => {
     const newClient: Client = { ...client, id: generateId() };

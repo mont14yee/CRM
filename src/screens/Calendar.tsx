@@ -132,7 +132,10 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
     return map;
   }, [events, search]);
 
-  const sortedDates = Array.from(eventsByDate.keys()).sort();
+  const todayStr = getTodayDateStr();
+  const sortedDates = Array.from(eventsByDate.keys())
+    .filter(date => tab === 'Month' || date >= todayStr)
+    .sort();
 
   return (
     <div className="absolute inset-0 bg-canvas z-50 flex flex-col overflow-y-auto no-scrollbar">
@@ -284,7 +287,7 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
             onChange={(c) => setForm({ ...form, category: c })}
             scope="event"
             categories={preferences.categories}
-            onAddCategory={() => addCategory({ label: 'New Category', color: '#888E80', scope: 'event' })}
+            onAddCategory={addCategory}
           />
         </BottomSheetField>
 
@@ -336,7 +339,7 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
                 items={clients.map(c => ({ id: c.id, label: c.name }))}
                 value={form.clientId}
                 onChange={(id) => setForm(f => ({ ...f, clientId: id }))}
-                placeholder="Select a client..."
+                
               />
             </BottomSheetField>
 
@@ -377,7 +380,7 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
 
       <ConfirmDialog
         isOpen={isDeleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
+        onCancel={() => setDeleteConfirmOpen(false)}
         onConfirm={() => {
           if (editingEvent) {
             deleteEvent(editingEvent.id);

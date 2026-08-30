@@ -72,6 +72,12 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
       totalSecs = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
     }
 
+    // Ensure rounding applies even if user manually typed an exact unrounded time
+    const incrementSeconds = (preferences.roundingIncrementMinutes || 1) * 60;
+    if (incrementSeconds > 0) {
+      totalSecs = Math.ceil(totalSecs / incrementSeconds) * incrementSeconds;
+    }
+
     if (editingEntry) {
       updateTimeEntry(editingEntry.id, {
         projectId: activeProjectId,
@@ -271,10 +277,10 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
       >
         <BottomSheetField label="Project / Task">
           <SearchPicker
-            items={projects.map(p => ({ id: p.id, label: p.name, color: p.color }))}
+            items={projects.map(p => ({ id: p.id, label: p.name }))}
             value={activeProjectId}
             onChange={(id) => setActiveProjectId(id)}
-            placeholder="Select a project..."
+            
           />
         </BottomSheetField>
         
@@ -328,10 +334,10 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
 
         <BottomSheetField label="Project / Task">
           <SearchPicker
-            items={projects.map(p => ({ id: p.id, label: p.name, color: p.color }))}
+            items={projects.map(p => ({ id: p.id, label: p.name }))}
             value={activeProjectId}
             onChange={(id) => setActiveProjectId(id)}
-            placeholder="Select a project..."
+            
           />
         </BottomSheetField>
         
@@ -347,7 +353,7 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
 
       <ConfirmDialog
         isOpen={isDeleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
+        onCancel={() => setDeleteConfirmOpen(false)}
         onConfirm={confirmDeleteEntry}
         title="Delete Entry"
         body="Are you sure you want to delete this time entry? This action cannot be undone."

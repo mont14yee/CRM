@@ -1,7 +1,7 @@
 import { createContext, useContext, ReactNode } from 'react';
 import { UserPreferences, Category } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { generateId } from '../utils';
+import { generateId } from '../utils/id';
 
 const defaultCategories: Category[] = [
   { id: 'c1', label: 'Client Calls', color: '#E7F45A', scope: 'task' },
@@ -27,7 +27,7 @@ interface PreferencesContextType {
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
-  const [preferences, setPreferences] = useLocalStorage<UserPreferences>('conneq_preferences', defaultPreferences);
+  const [preferences, setPreferences] = useLocalStorage<UserPreferences>('conneq-preferences', defaultPreferences);
 
   const updatePreferences = (updates: Partial<UserPreferences>) => {
     setPreferences((prev) => ({ ...prev, ...updates }));
