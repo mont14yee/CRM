@@ -58,7 +58,7 @@ export function SearchPicker({
           className="flex-1 bg-transparent border-none outline-none text-[15px] text-tx-primary min-w-0"
         />
         {(isOpen && selectedItem) && (
-          <button type="button" onClick={() => { setIsOpen(false); setSearch(''); }} className="p-1 text-tx-muted hover:text-tx-primary shrink-0">
+          <button type="button" onClick={() => { setIsOpen(false); setSearch(''); }} className="p-1 text-tx-muted hover:text-tx-primary shrink-0" aria-label="Clear selection">
             <X size={16} />
           </button>
         )}

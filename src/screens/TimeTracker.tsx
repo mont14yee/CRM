@@ -147,13 +147,13 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
     <div className="absolute inset-0 bg-tx-primary z-50 flex flex-col overflow-y-auto no-scrollbar">
       <Header
         leftIcon={
-          <button onClick={onDismiss} className="w-11 h-11 rounded-full bg-tx-inverse/10 flex items-center justify-center text-tx-inverse">
+          <button onClick={onDismiss} className="w-11 h-11 rounded-full bg-tx-inverse/10 flex items-center justify-center text-tx-inverse" aria-label="Close">
             <X size={20} />
           </button>
         }
         title={<span className="text-tx-inverse">Time Tracker</span>}
         rightIcon={
-          <button onClick={handleManualEntry} className="w-11 h-11 rounded-full bg-tx-inverse/10 flex items-center justify-center text-tx-inverse">
+          <button onClick={handleManualEntry} className="w-11 h-11 rounded-full bg-tx-inverse/10 flex items-center justify-center text-tx-inverse" aria-label="Manual entry">
             <MoreVertical size={20} />
           </button>
         }
@@ -210,11 +210,11 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
         ) : (
           <div className="flex items-center gap-4">
             {timerState === 'running' ? (
-              <button onClick={pauseTimer} className="w-16 h-16 rounded-full bg-tx-inverse/10 flex items-center justify-center text-tx-inverse active:opacity-80 transition-opacity">
+              <button onClick={pauseTimer} className="w-16 h-16 rounded-full bg-tx-inverse/10 flex items-center justify-center text-tx-inverse active:opacity-80 transition-opacity" aria-label="Pause timer">
                 <Pause size={24} fill="currentColor" />
               </button>
             ) : (
-              <button onClick={handleStartButton} className="w-16 h-16 rounded-full bg-tx-inverse/10 flex items-center justify-center text-tx-inverse active:opacity-80 transition-opacity">
+              <button onClick={handleStartButton} className="w-16 h-16 rounded-full bg-tx-inverse/10 flex items-center justify-center text-tx-inverse active:opacity-80 transition-opacity" aria-label="Resume timer">
                 <Play size={24} fill="currentColor" />
               </button>
             )}
@@ -249,10 +249,10 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleEditEntry(entry)} className="p-2 text-tx-muted hover:text-tx-primary rounded-full transition-colors">
+                        <button onClick={() => handleEditEntry(entry)} className="p-2 text-tx-muted hover:text-tx-primary rounded-full transition-colors" aria-label="Edit time entry">
                           <Edit2 size={16} />
                         </button>
-                        <button onClick={() => handleDeleteEntry(entry.id)} className="p-2 text-tx-muted hover:text-red-500 rounded-full transition-colors">
+                        <button onClick={() => handleDeleteEntry(entry.id)} className="p-2 text-tx-muted hover:text-red-500 rounded-full transition-colors" aria-label="Delete time entry">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -300,6 +300,7 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
             <button 
               onClick={() => setActiveBillable(!activeBillable)}
               className={`w-12 h-6 rounded-full transition-colors flex items-center p-1 ${activeBillable ? 'bg-tx-primary' : 'bg-canvas border border-bd-subtle'}`}
+              aria-label={activeBillable ? "Disable billable" : "Enable billable"}
             >
               <div className={`w-4 h-4 rounded-full bg-canvas transition-transform ${activeBillable ? 'translate-x-6' : 'translate-x-0 bg-tx-muted'}`} />
             </button>

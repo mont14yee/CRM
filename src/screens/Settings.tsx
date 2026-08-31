@@ -40,7 +40,7 @@ function PreferencesScreen({ onBack }: { onBack: () => void }) {
     <div className="absolute inset-0 bg-canvas z-50 flex flex-col overflow-y-auto no-scrollbar">
       <Header
         leftIcon={
-          <button onClick={onBack} className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary">
+          <button onClick={onBack} className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary" aria-label="Back">
             <ChevronLeft size={20} />
           </button>
         }
@@ -122,7 +122,7 @@ function PreferencesScreen({ onBack }: { onBack: () => void }) {
                     <div className="text-[12px] text-tx-muted capitalize">{c.scope}</div>
                   </div>
                 </div>
-                <button onClick={() => setDeleteCategoryId(c.id)} className="text-tx-muted hover:text-red-500 transition-colors p-2">
+                <button onClick={() => setDeleteCategoryId(c.id)} className="text-tx-muted hover:text-red-500 transition-colors p-2" aria-label="Delete category">
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -288,13 +288,13 @@ export function Settings({ onDismiss }: { onDismiss: () => void }) {
     <div className="absolute inset-0 bg-canvas z-50 flex flex-col overflow-y-auto no-scrollbar">
       <Header
         leftIcon={
-          <button onClick={onDismiss} className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary">
+          <button onClick={onDismiss} className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary" aria-label="Close">
             <X size={20} />
           </button>
         }
         title="Settings"
         rightIcon={
-          <button className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary">
+          <button className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary" aria-label="More options">
             <MoreVertical size={20} />
           </button>
         }

@@ -158,12 +158,14 @@ export function ListRow({
           <button 
             onClick={(e) => { e.stopPropagation(); onComplete?.(); setOffset(0); }}
             className="w-10 h-10 rounded-full bg-accent-primary flex items-center justify-center text-tx-primary"
+            aria-label="Complete item"
           >
             <Check size={20} />
           </button>
           <button 
             onClick={(e) => { e.stopPropagation(); onDelete?.(); setOffset(0); }}
             className="w-10 h-10 rounded-full bg-surface-muted flex items-center justify-center text-tx-inverse"
+            aria-label="Delete item"
           >
             <Trash2 size={20} />
           </button>

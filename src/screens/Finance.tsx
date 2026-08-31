@@ -171,7 +171,7 @@ export function Finance({ onDismiss }: { onDismiss: () => void }) {
     <div className="absolute inset-0 bg-canvas z-50 flex flex-col overflow-y-auto no-scrollbar pb-10">
       <Header
         leftIcon={
-          <button onClick={onDismiss} className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary active:opacity-80">
+          <button onClick={onDismiss} className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary active:opacity-80" aria-label="Close">
             <X size={20} />
           </button>
         }
@@ -201,7 +201,7 @@ export function Finance({ onDismiss }: { onDismiss: () => void }) {
               <div className="text-[14px] text-tx-inverse/70 mb-1">ConneQ Revenue</div>
               <div className="text-[36px] font-light leading-none">{formatCurrencyCompact(totalRevenue, preferences.currency)}</div>
             </div>
-            <button onClick={() => handleOpenLogSheet()} className="w-10 h-10 rounded-full bg-tx-inverse/10 flex items-center justify-center active:opacity-80">
+            <button onClick={() => handleOpenLogSheet()} className="w-10 h-10 rounded-full bg-tx-inverse/10 flex items-center justify-center active:opacity-80" aria-label="Log revenue">
               <Edit2 size={18} />
             </button>
           </div>
@@ -232,7 +232,7 @@ export function Finance({ onDismiss }: { onDismiss: () => void }) {
           <div className="bg-surface-neutral rounded-[24px] p-6">
             <div className="flex justify-between items-center mb-1">
               <div className="text-[14px] text-tx-muted">Yearly Revenue Goal</div>
-              <button onClick={() => { setGoalForm({ ...goalForm, amount: yearlyGoal.toString() }); setGoalSheetOpen(true); }} className="active:opacity-80">
+              <button onClick={() => { setGoalForm({ ...goalForm, amount: yearlyGoal.toString() }); setGoalSheetOpen(true); }} className="active:opacity-80" aria-label="Set yearly goal">
                 <ChevronDown size={20} className="text-tx-muted" />
               </button>
             </div>

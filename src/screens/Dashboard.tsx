@@ -120,17 +120,17 @@ export function Dashboard({ onPush }: { onPush: (screen: PushedScreenState) => v
     <div className="flex flex-col h-full bg-canvas pb-28 overflow-y-auto no-scrollbar relative">
       <Header
         leftIcon={
-          <button onClick={() => onPush('settings')} className="w-11 h-11 rounded-full overflow-hidden bg-surface-neutral">
+          <button onClick={() => onPush('settings')} className="w-11 h-11 rounded-full overflow-hidden bg-surface-neutral" aria-label="Settings">
             <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${avatarSeed}`} alt="Avatar" className="w-full h-full object-cover" />
           </button>
         }
         title={<span className="text-[17px] font-medium text-tx-primary">Hi, {name.split(' ')[0]}</span>}
         rightIcon={
           <div className="flex items-center bg-surface-neutral rounded-full h-11 p-1">
-            <button onClick={() => setIsSearchOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-full bg-canvas shadow-sm text-tx-primary">
+            <button onClick={() => setIsSearchOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-full bg-canvas shadow-sm text-tx-primary" aria-label="Search">
               <Search size={18} />
             </button>
-            <button onClick={() => setIsNotificationsOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-full text-tx-primary relative">
+            <button onClick={() => setIsNotificationsOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-full text-tx-primary relative" aria-label="Notifications">
               <Bell size={18} />
               {notifications.length > 0 && (
                 <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-surface-neutral" />
@@ -290,7 +290,7 @@ export function Dashboard({ onPush }: { onPush: (screen: PushedScreenState) => v
         <div className="absolute inset-0 z-[100] bg-canvas flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
           <Header
             leftIcon={
-              <button onClick={() => setIsNotificationsOpen(false)} className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary active:opacity-80">
+              <button onClick={() => setIsNotificationsOpen(false)} className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary active:opacity-80" aria-label="Close notifications">
                 <X size={20} />
               </button>
             }

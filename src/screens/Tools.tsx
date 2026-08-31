@@ -25,13 +25,13 @@ export function Tools({ onPush }: { onPush: (screen: PushedScreenState) => void 
     <div className="flex flex-col h-full bg-canvas pb-28 overflow-y-auto no-scrollbar">
       <Header
         leftIcon={
-          <button className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary">
+          <button className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary" aria-label="Search tools">
             <Search size={20} />
           </button>
         }
         title="Tools"
         rightIcon={
-          <button className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary">
+          <button className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary" aria-label="More options">
             <MoreVertical size={20} />
           </button>
         }

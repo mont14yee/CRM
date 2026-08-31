@@ -141,13 +141,13 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
     <div className="absolute inset-0 bg-canvas z-50 flex flex-col overflow-y-auto no-scrollbar">
       <Header
         leftIcon={
-          <button onClick={onDismiss} className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary">
+          <button onClick={onDismiss} className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary" aria-label="Close">
             <X size={20} />
           </button>
         }
         title="Calendar"
         rightIcon={
-          <button onClick={() => handleOpenSheet()} className="w-11 h-11 rounded-full bg-tx-primary flex items-center justify-center text-tx-inverse">
+          <button onClick={() => handleOpenSheet()} className="w-11 h-11 rounded-full bg-tx-primary flex items-center justify-center text-tx-inverse" aria-label="Add event">
             <Plus size={20} />
           </button>
         }
@@ -168,7 +168,7 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
               </button>
             ))}
           </div>
-          <button onClick={() => setIsSearching(!isSearching)} className="w-10 h-10 rounded-full bg-surface-neutral text-tx-primary flex items-center justify-center shrink-0">
+          <button onClick={() => setIsSearching(!isSearching)} className="w-10 h-10 rounded-full bg-surface-neutral text-tx-primary flex items-center justify-center shrink-0" aria-label="Search events">
             <Search size={18} />
           </button>
         </div>
@@ -197,10 +197,10 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
                 Today
               </button>
               <div className="flex items-center bg-surface-neutral rounded-full">
-                <button onClick={handlePrevMonth} className="w-10 h-10 flex items-center justify-center text-tx-primary rounded-full active:bg-tx-primary/10">
+                <button onClick={handlePrevMonth} className="w-10 h-10 flex items-center justify-center text-tx-primary rounded-full active:bg-tx-primary/10" aria-label="Previous month">
                   <ChevronLeft size={20} />
                 </button>
-                <button onClick={handleNextMonth} className="w-10 h-10 flex items-center justify-center text-tx-primary rounded-full active:bg-tx-primary/10">
+                <button onClick={handleNextMonth} className="w-10 h-10 flex items-center justify-center text-tx-primary rounded-full active:bg-tx-primary/10" aria-label="Next month">
                   <ChevronRight size={20} />
                 </button>
               </div>
@@ -298,6 +298,7 @@ export function Calendar({ onDismiss }: { onDismiss: () => void }) {
               <button 
                 onClick={() => setForm(f => ({ ...f, allDay: !f.allDay }))}
                 className={`w-12 h-6 rounded-full transition-colors flex items-center p-1 ${form.allDay ? 'bg-tx-primary' : 'bg-canvas border border-bd-subtle'}`}
+                aria-label={form.allDay ? "Disable all-day" : "Enable all-day"}
               >
                 <div className={`w-4 h-4 rounded-full bg-canvas transition-transform ${form.allDay ? 'translate-x-6' : 'translate-x-0 bg-tx-muted'}`} />
               </button>

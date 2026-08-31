@@ -31,7 +31,7 @@ const CHANNEL_ICONS: Record<MessageChannel, React.ElementType> = {
   meeting: Video,
 };
 
-export function Clients({ initialClientId }: { initialClientId?: string }) {
+export function Clients({ initialClientId, initialOpenCreate }: { initialClientId?: string; initialOpenCreate?: boolean }) {
   const { clients, addClient, updateClient, deleteClient } = useClients();
   const { messagesForClient, addMessage } = useMessages();
   const { projects } = useProjects();
@@ -45,7 +45,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // Sheet / Modals
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(!!initialOpenCreate);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
 
@@ -75,6 +75,12 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
     }
   }, [initialClientId]);
 
+  useEffect(() => {
+    if (initialOpenCreate) {
+      setIsSheetOpen(true);
+    }
+  }, [initialOpenCreate]);
+
   // Derived
   const filteredClients = useMemo(() => {
     let result = clients;
@@ -103,6 +109,37 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
     };
   }, [clients]);
 
+  const clientRevenues = useMemo(() => {
+    if (!selectedClient) return [];
+    const thresholdDays = preferences.overdueThresholdDays || 14;
+    const today = new Date();
+    
+    return revenues
+      .filter(r => r.clientId === selectedClient.id)
+      .map(r => {
+        let status = r.status;
+        if (status === 'Pending') {
+          const entryDate = new Date(r.date);
+          const diffTime = today.getTime() - entryDate.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          if (diffDays > thresholdDays) {
+            status = 'Overdue';
+          }
+        }
+        return { ...r, status };
+      })
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [revenues, selectedClient, preferences.overdueThresholdDays]);
+
+  const billingTotals = useMemo(() => {
+    return clientRevenues.reduce((acc, r) => {
+      acc.billed += r.amount;
+      if (r.status === 'Paid') acc.paid += r.amount;
+      if (r.status === 'Pending' || r.status === 'Overdue') acc.outstanding += r.amount;
+      return acc;
+    }, { billed: 0, paid: 0, outstanding: 0 });
+  }, [clientRevenues]);
+
   // Handlers
   const handleOpenCreate = () => {
     setForm(initialFormState);
@@ -127,14 +164,19 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
     }
   };
 
-  const handleSaveClient = () => {
+  const handleSaveClient = (addAnother: boolean = false) => {
     if (!form.name.trim()) return;
     if (editingClientId) {
       updateClient(editingClientId, form);
     } else {
       addClient({ ...form, avatarSeed: generateId(), createdAt: new Date().toISOString() });
     }
-    setIsSheetOpen(false);
+    if (addAnother) {
+      setForm({ name: '', company: '', email: '', phone: '', status: 'lead', notes: '', tags: [] });
+      setEditingClientId(null);
+    } else {
+      setIsSheetOpen(false);
+    }
   };
 
   const confirmDelete = () => {
@@ -175,6 +217,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
             <button 
               onClick={() => setSelectedClientId(null)}
               className="w-10 h-10 flex items-center justify-center -ml-2 rounded-full hover:bg-surface-neutral text-tx-primary transition-colors active:opacity-80"
+              aria-label="Back to clients"
             >
               <ChevronLeft size={24} />
             </button>
@@ -183,6 +226,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="w-10 h-10 flex items-center justify-center -mr-2 rounded-full hover:bg-surface-neutral text-tx-primary transition-colors active:opacity-80"
+                aria-label="More options"
               >
                 <MoreVertical size={20} />
               </button>
@@ -279,6 +323,49 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
             </div>
           </div>
 
+          {clientRevenues.length > 0 && (
+            <div className="px-4 mb-6">
+              <h3 className="text-[15px] font-bold text-tx-primary mb-4 px-1">Billing</h3>
+              
+              <div className="flex gap-4 mb-4 px-1">
+                <div className="flex-1">
+                  <div className="text-[12px] font-medium text-tx-muted mb-0.5">Total Billed</div>
+                  <div className="text-[15px] font-semibold text-tx-primary">{formatCurrency(billingTotals.billed, preferences.currency)}</div>
+                </div>
+                <div className="flex-1">
+                  <div className="text-[12px] font-medium text-tx-muted mb-0.5">Paid</div>
+                  <div className="text-[15px] font-semibold text-emerald-600">{formatCurrency(billingTotals.paid, preferences.currency)}</div>
+                </div>
+                <div className="flex-1">
+                  <div className="text-[12px] font-medium text-tx-muted mb-0.5">Outstanding</div>
+                  <div className={`text-[15px] font-semibold ${billingTotals.outstanding > 0 ? 'text-red-500' : 'text-tx-primary'}`}>{formatCurrency(billingTotals.outstanding, preferences.currency)}</div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {clientRevenues.map(r => (
+                  <div key={r.id} className="bg-canvas border border-bd-subtle rounded-xl px-4 py-3 flex items-center justify-between">
+                    <div>
+                      <div className="text-[15px] font-medium text-tx-primary mb-0.5">{formatCurrency(r.amount, preferences.currency)}</div>
+                      <div className="text-[13px] text-tx-muted flex items-center gap-1.5">
+                        {r.clientOrProject || 'General'}
+                        <span className="w-1 h-1 rounded-full bg-bd-subtle" />
+                        {new Date(r.date + 'T00:00:00').toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className={`px-2.5 py-1 rounded-full text-[11px] font-medium ${
+                      r.status === 'Paid' ? 'bg-accent-primary/20 text-tx-primary' :
+                      r.status === 'Overdue' ? 'bg-red-500/10 text-red-500' :
+                      'bg-surface-muted text-tx-muted'
+                    }`}>
+                      {r.status}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="px-4 pb-8 flex-1">
             <h3 className="text-[15px] font-bold text-tx-primary mb-4 px-1">Activity & Notes</h3>
             
@@ -299,6 +386,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
                         key={ch}
                         onClick={() => setMsgChannel(ch)}
                         className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isActive ? 'bg-surface-neutral text-tx-primary' : 'text-tx-muted hover:text-tx-secondary hover:bg-surface-neutral/50'}`}
+                        aria-label={ch}
                       >
                         <Icon size={16} />
                       </button>
@@ -309,6 +397,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
                   onClick={handleSendMsg}
                   disabled={!msgBody.trim()}
                   className="w-8 h-8 rounded-full bg-tx-primary text-tx-inverse flex items-center justify-center disabled:opacity-50 transition-opacity active:scale-95"
+                  aria-label="Send message"
                 >
                   <Send size={14} className="ml-0.5" />
                 </button>
@@ -350,12 +439,14 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
               <button 
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-neutral text-tx-primary transition-colors active:opacity-80"
+                aria-label="Search clients"
               >
                 <Search size={20} />
               </button>
               <button 
                 onClick={handleOpenCreate}
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-tx-primary text-tx-inverse hover:opacity-90 transition-opacity active:opacity-80"
+                aria-label="Add client"
               >
                 <Plus size={22} />
               </button>
@@ -378,6 +469,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
                   <button 
                     onClick={() => setSearchQuery('')}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-tx-muted p-1"
+                    aria-label="Clear search"
                   >
                     <X size={16} />
                   </button>
@@ -452,8 +544,18 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
         isOpen={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
         title={editingClientId ? "Edit Client" : "New Client"}
-        onSave={handleSaveClient}
+        onSave={() => handleSaveClient(false)}
         saveLabel="Save"
+        secondaryAction={
+          !editingClientId ? (
+            <button
+              onClick={() => handleSaveClient(true)}
+              className="w-full py-3.5 rounded-full bg-surface-neutral text-tx-primary text-[15px] font-medium active:opacity-80 transition-opacity"
+            >
+              Save & Add Another
+            </button>
+          ) : undefined
+        }
       >
         <BottomSheetField label="Name *">
           <input 
@@ -516,7 +618,7 @@ export function Clients({ initialClientId }: { initialClientId?: string }) {
               {form.tags.map(t => (
                 <span key={t} className="px-3 py-1 bg-surface-neutral text-tx-primary text-[14px] font-medium rounded-full border border-bd-subtle flex items-center gap-1.5">
                   {t}
-                  <button onClick={() => removeTag(t)} className="text-tx-muted hover:text-tx-primary">
+                  <button onClick={() => removeTag(t)} className="text-tx-muted hover:text-tx-primary" aria-label="Remove tag">
                     <X size={14} />
                   </button>
                 </span>

@@ -110,13 +110,13 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
     <div className="absolute inset-0 bg-canvas z-50 flex flex-col overflow-y-auto no-scrollbar">
       <Header
         leftIcon={
-          <button onClick={onDismiss} className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary">
+          <button onClick={onDismiss} className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary" aria-label="Close">
             <X size={20} />
           </button>
         }
         title="Tasks"
         rightIcon={
-          <button className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary">
+          <button className="w-11 h-11 rounded-full bg-surface-neutral flex items-center justify-center text-tx-primary" aria-label="More options">
             <MoreVertical size={20} />
           </button>
         }
@@ -136,7 +136,7 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
             </button>
           ))}
         </div>
-        <button onClick={() => handleOpenSheet()} className="w-11 h-11 rounded-full bg-tx-primary text-tx-inverse flex items-center justify-center shrink-0">
+        <button onClick={() => handleOpenSheet()} className="w-11 h-11 rounded-full bg-tx-primary text-tx-inverse flex items-center justify-center shrink-0" aria-label="Add task">
           <Plus size={20} />
         </button>
       </div>
@@ -166,7 +166,7 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
       <div className="px-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[17px] font-medium text-tx-primary">{tab === 'Today' ? 'Today Tasks' : 'All Tasks'}</h2>
-          <button onClick={() => handleOpenSheet()} className="text-[20px] text-tx-primary">
+          <button onClick={() => handleOpenSheet()} className="text-[20px] text-tx-primary" aria-label="Add task">
             +
           </button>
         </div>

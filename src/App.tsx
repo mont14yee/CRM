@@ -8,24 +8,26 @@ import { Dashboard } from './screens/Dashboard';
 import { Projects } from './screens/Projects';
 import { Tools } from './screens/Tools';
 import { Clients } from './screens/Clients';
-
 import { Tasks } from './screens/Tasks';
 import { Calendar } from './screens/Calendar';
 import { Finance } from './screens/Finance';
 import { TimeTracker } from './screens/TimeTracker';
 import { Settings } from './screens/Settings';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { Onboarding } from './components/Onboarding';
 
 function MainApp() {
   const { activeTab, pushedScreen, push, dismiss, goToTab, navigationOptions } = useNavigation();
 
   return (
     <div className="relative w-full h-[100dvh] bg-canvas overflow-hidden max-w-[430px] mx-auto sm:border-x sm:border-bd-subtle shadow-2xl">
+      <Onboarding />
       {/* Main Tabs Container */}
       <div className="w-full h-full relative z-0">
         <div className={activeTab === 'dashboard' ? 'block h-full' : 'hidden'}><Dashboard onPush={push} /></div>
         <div className={activeTab === 'projects' ? 'block h-full' : 'hidden'}><Projects /></div>
         <div className={activeTab === 'tools' ? 'block h-full' : 'hidden'}><Tools onPush={push} /></div>
-        <div className={activeTab === 'clients' ? 'block h-full' : 'hidden'}><Clients initialClientId={navigationOptions?.clientId} /></div>
+        <div className={activeTab === 'clients' ? 'block h-full' : 'hidden'}><Clients initialClientId={navigationOptions?.clientId} initialOpenCreate={navigationOptions?.openCreate} /></div>
       </div>
 
       <Navigation activeTab={activeTab} onChange={(tab) => goToTab(tab)} />
@@ -45,7 +47,9 @@ export default function App() {
     <PreferencesProvider>
       <DataProvider>
         <ToastProvider>
-          <MainApp />
+          <ErrorBoundary>
+            <MainApp />
+          </ErrorBoundary>
         </ToastProvider>
       </DataProvider>
     </PreferencesProvider>

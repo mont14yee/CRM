@@ -29,7 +29,7 @@ export function BottomSheet({
       />
       <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-canvas rounded-t-[32px] z-50 flex flex-col max-h-[90vh] shadow-2xl animate-in slide-in-from-bottom duration-300">
         <div className="flex items-center justify-between px-5 pt-4 pb-2 border-b border-bd-subtle shrink-0">
-          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-surface-neutral rounded-full text-tx-primary">
+          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-surface-neutral rounded-full text-tx-primary" aria-label="Close sheet">
             <X size={20} />
           </button>
           <h2 className="text-[17px] font-medium text-tx-primary flex-1 text-center">{title}</h2>
