@@ -21,7 +21,7 @@ describe('ConneQ App Tests', () => {
     
     const dashboardBtn = screen.getByRole('button', { name: /go to dashboard tab/i });
     const projectsBtn = screen.getByRole('button', { name: /go to projects tab/i });
-    const toolsBtn = screen.getByRole('button', { name: /go to tools tab/i });
+    const toolsBtn = screen.getByRole('button', { name: /go to productivity tab/i });
     const clientsBtn = screen.getByRole('button', { name: /go to clients tab/i });
     
     expect(dashboardBtn).toBeInTheDocument();
@@ -107,7 +107,7 @@ describe('ConneQ App Tests', () => {
     const user = userEvent.setup();
     const { container, unmount } = render(<App />);
     
-    await user.click(screen.getByRole('button', { name: /go to tools tab/i }));
+    await user.click(screen.getByRole('button', { name: /go to productivity tab/i }));
     await user.click(within(getActiveTab(container)).getByText('Time Tracker'));
     
     const startBtns = screen.getAllByRole('button', { name: /start/i });

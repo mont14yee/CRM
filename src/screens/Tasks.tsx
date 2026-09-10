@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react';
-import { X, MoreVertical, Plus, ChevronDown } from 'lucide-react';
+import { X, MoreVertical, Plus, ChevronDown, Layout, FolderHeart, Calendar, Clock, CheckSquare } from 'lucide-react';
 import { Header, StatCard, ListRow } from '../components/Shared';
 import { BottomSheet, BottomSheetField, CategoryPicker } from '../components/BottomSheet';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { usePreferences } from '../context/PreferencesContext';
 import { useToast } from '../context/ToastContext';
 import { useTasks } from '../context/TasksContext';
+import { useNavigation } from '../context/NavigationContext';
+import { useTimeTracker } from '../context/TimeTrackerContext';
+import { useProjects } from '../context/ProjectsContext';
 import { TaskItem } from '../types';
 
 export function Tasks({ onDismiss }: { onDismiss: () => void }) {
@@ -18,7 +21,13 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
 
   const { preferences, addCategory } = usePreferences();
   const { showToast } = useToast();
+  const { startTimerFor } = useTimeTracker();
   const { tasks, addTask, updateTask, deleteTask, completeTask } = useTasks();
+  const { projects } = useProjects();
+  const { navigationOptions, push, goToTab } = useNavigation();
+  
+  const initialProjectId = navigationOptions?.filterProjectId || '';
+  const [filterProjectId, setFilterProjectId] = useState(initialProjectId);
 
   const [form, setForm] = useState({
     title: '',
@@ -262,6 +271,41 @@ export function Tasks({ onDismiss }: { onDismiss: () => void }) {
             </BottomSheetField>
           </>
         )}
+        {editingTask && (
+          <div className="pt-4 mt-4 border-t border-bd-subtle">
+            <h4 className="text-[13px] font-bold text-tx-muted uppercase tracking-wider mb-3">Related</h4>
+            <div className="grid grid-cols-2 gap-3">
+              {editingTask.projectId && (
+                <button onClick={() => { setSheetOpen(false); goToTab('projects', { filterProjectId: editingTask.projectId }); }} className="flex items-center gap-2 p-3 bg-surface-neutral/30 rounded-xl border border-bd-subtle hover:border-accent-primary/50 transition-colors">
+                  <Layout size={16} className="text-tx-primary" />
+                  <span className="text-[14px] font-medium text-tx-primary">Project</span>
+                </button>
+              )}
+              <button onClick={() => { setSheetOpen(false); push('library', { filterTaskId: editingTask.id }); }} className="flex items-center gap-2 p-3 bg-surface-neutral/30 rounded-xl border border-bd-subtle hover:border-accent-primary/50 transition-colors">
+                <FolderHeart size={16} className="text-tx-primary" />
+                <span className="text-[14px] font-medium text-tx-primary">Library Files</span>
+              </button>
+              <button onClick={() => { setSheetOpen(false); push('calendar', { filterTaskId: editingTask.id }); }} className="flex items-center gap-2 p-3 bg-surface-neutral/30 rounded-xl border border-bd-subtle hover:border-accent-primary/50 transition-colors">
+                <Calendar size={16} className="text-tx-primary" />
+                <span className="text-[14px] font-medium text-tx-primary">Schedule</span>
+              </button>
+              <button onClick={() => { setSheetOpen(false); push('time-tracker', { filterTaskId: editingTask.id }); }} className="flex items-center gap-2 p-3 bg-surface-neutral/30 rounded-xl border border-bd-subtle hover:border-accent-primary/50 transition-colors">
+                <Clock size={16} className="text-tx-primary" />
+                <span className="text-[14px] font-medium text-tx-primary">Time Entries</span>
+              </button>
+              <button onClick={() => { 
+                setSheetOpen(false); 
+                startTimerFor({ taskId: editingTask.id, projectId: editingTask.projectId, clientId: editingTask.clientId, note: editingTask.title });
+                push('time-tracker');
+              }} className="flex items-center gap-2 p-3 bg-accent-primary/10 rounded-xl border border-accent-primary/20 hover:border-accent-primary/50 transition-colors">
+                <Clock size={16} className="text-accent-primary" />
+                <span className="text-[14px] font-medium text-accent-primary">Start Timer</span>
+              </button>
+
+            </div>
+          </div>
+        )}
+
       </BottomSheet>
 
       <ConfirmDialog

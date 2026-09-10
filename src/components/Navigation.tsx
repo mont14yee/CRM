@@ -11,12 +11,12 @@ export function Navigation({
   const tabs = [
     { id: 'dashboard', icon: LayoutDashboard },
     { id: 'projects', icon: FolderKanban },
-    { id: 'tools', icon: Wrench },
+    { id: 'productivity', icon: Wrench }, // Replacing tools
     { id: 'clients', icon: Users },
   ] as const;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-canvas border-t border-bd-subtle pb-6 pt-2 px-6 flex items-center justify-between z-40">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-canvas border-t border-bd-subtle pb-safe pt-2 px-6 flex items-center justify-between z-40" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 1.5rem)' }}>
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         const Icon = tab.icon;

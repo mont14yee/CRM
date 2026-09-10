@@ -5,7 +5,7 @@ import { generateId } from '../utils/id';
 
 interface ProjectsContextType {
   projects: ProjectItem[];
-  addProject: (project: Omit<ProjectItem, 'id' | 'index'>) => void;
+  addProject: (project: Omit<ProjectItem, 'id' | 'index'>) => string;
   updateProject: (id: string, updates: Partial<ProjectItem>) => void;
   deleteProject: (id: string) => void;
 }
@@ -19,10 +19,11 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     const id = generateId();
     const index = String(projects.length + 1).padStart(2, '0');
     setProjects((prev) => [...prev, { ...project, id, index }]);
+    return id;
   };
 
   const updateProject = (id: string, updates: Partial<ProjectItem>) => {
-    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+    setProjects((prev) => prev.map((p) => (p.id === id ? { updatedAt: new Date().toISOString(), ...p, ...updates } : p)));
   };
 
   const deleteProject = (id: string) => {

@@ -5,7 +5,7 @@ import { generateId } from '../utils/id';
 
 interface TasksContextType {
   tasks: TaskItem[];
-  addTask: (task: Omit<TaskItem, 'id'>) => void;
+  addTask: (task: Omit<TaskItem, 'id'>) => string;
   updateTask: (id: string, updates: Partial<TaskItem>) => void;
   deleteTask: (id: string) => void;
   completeTask: (id: string) => void;
@@ -17,12 +17,13 @@ export function TasksProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useLocalStorage<TaskItem[]>('conneq-tasks', []);
 
   const addTask = (task: Omit<TaskItem, 'id'>) => {
-    const newTask: TaskItem = { ...task, id: generateId() };
+    const newTask: TaskItem = { ...task, id: generateId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     setTasks((prev) => [...prev, newTask]);
+    return newTask.id;
   };
 
   const updateTask = (id: string, updates: Partial<TaskItem>) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+    setTasks((prev) => prev.map((t) => (t.id === id ? { updatedAt: new Date().toISOString(), ...t, ...updates } : t)));
   };
 
   const deleteTask = (id: string) => {

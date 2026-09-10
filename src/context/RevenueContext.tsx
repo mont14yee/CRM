@@ -19,12 +19,12 @@ export function RevenueProvider({ children }: { children: ReactNode }) {
   const [yearlyGoal, setYearlyGoal] = useLocalStorage<number>('conneq-yearly-goal', 8367);
 
   const addRevenue = (revenue: Omit<RevenueEntry, 'id'>) => {
-    const newRevenue: RevenueEntry = { ...revenue, id: generateId() };
+    const newRevenue: RevenueEntry = { ...revenue, id: generateId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     setRevenues((prev) => [...prev, newRevenue]);
   };
 
   const updateRevenue = (id: string, updates: Partial<RevenueEntry>) => {
-    setRevenues((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
+    setRevenues((prev) => prev.map((r) => (r.id === id ? { updatedAt: new Date().toISOString(), ...r, ...updates } : r)));
   };
 
   const deleteRevenue = (id: string) => {

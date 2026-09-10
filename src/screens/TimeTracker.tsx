@@ -7,6 +7,7 @@ import { SearchPicker } from '../components/SearchPicker';
 import { useToast } from '../context/ToastContext';
 import { useTimeTracker } from '../context/TimeTrackerContext';
 import { useProjects } from '../context/ProjectsContext';
+import { useNavigation } from '../context/NavigationContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { TimeEntry } from '../types';
 
@@ -14,11 +15,16 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
   const { showToast } = useToast();
   const { preferences } = usePreferences();
   const { projects } = useProjects();
+  const { navigationOptions, push, goToTab } = useNavigation();
+  const filterProjectId = navigationOptions?.filterProjectId || '';
+  const filterTaskId = navigationOptions?.filterTaskId || '';
+  const filterClientId = navigationOptions?.filterClientId || '';
   const {
     timeEntries, addTimeEntry, updateTimeEntry, deleteTimeEntry,
     timerState, startTimer, pauseTimer, stopTimer, resetTimer,
     timerStartedAt, elapsedSeconds,
     activeProjectId, setActiveProjectId,
+    activeTaskId, setActiveTaskId, activeClientId, setActiveClientId,
     activeNote, setActiveNote,
     activeBillable, setActiveBillable
   } = useTimeTracker();
@@ -279,7 +285,7 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
           <SearchPicker
             items={projects.map(p => ({ id: p.id, label: p.name }))}
             value={activeProjectId}
-            onChange={(id) => setActiveProjectId(id)}
+            onChange={(id) => { setActiveProjectId(id); setActiveTaskId(''); const p = projects.find(x => x.id === id); if(p?.clientId) setActiveClientId(p.clientId); else setActiveClientId(''); }}
             
           />
         </BottomSheetField>
@@ -306,6 +312,18 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
             </button>
           </div>
         </BottomSheetField>
+        {editingEntry && (
+          <div className="pt-4 mt-4 border-t border-bd-subtle">
+            <h4 className="text-[13px] font-bold text-tx-muted uppercase tracking-wider mb-3">Related</h4>
+            <div className="grid grid-cols-2 gap-3">
+              {editingEntry.projectId && (
+                <button onClick={() => { setSaveSheetOpen(false); goToTab('projects', { filterProjectId: editingEntry.projectId }); }} className="flex items-center gap-2 p-3 bg-surface-neutral/30 rounded-xl border border-bd-subtle hover:border-accent-primary/50 transition-colors">
+                  <span className="text-[14px] font-medium text-tx-primary">View Project</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </BottomSheet>
 
       <BottomSheet
@@ -337,7 +355,7 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
           <SearchPicker
             items={projects.map(p => ({ id: p.id, label: p.name }))}
             value={activeProjectId}
-            onChange={(id) => setActiveProjectId(id)}
+            onChange={(id) => { setActiveProjectId(id); setActiveTaskId(''); const p = projects.find(x => x.id === id); if(p?.clientId) setActiveClientId(p.clientId); else setActiveClientId(''); }}
             
           />
         </BottomSheetField>
@@ -350,6 +368,18 @@ export function TimeTracker({ onDismiss }: { onDismiss: () => void }) {
             className="w-full px-4 py-3 rounded-xl bg-surface-neutral border-none text-[15px] outline-none h-24 resize-none" 
           />
         </BottomSheetField>
+        {editingEntry && (
+          <div className="pt-4 mt-4 border-t border-bd-subtle">
+            <h4 className="text-[13px] font-bold text-tx-muted uppercase tracking-wider mb-3">Related</h4>
+            <div className="grid grid-cols-2 gap-3">
+              {editingEntry.projectId && (
+                <button onClick={() => { setSaveSheetOpen(false); goToTab('projects', { filterProjectId: editingEntry.projectId }); }} className="flex items-center gap-2 p-3 bg-surface-neutral/30 rounded-xl border border-bd-subtle hover:border-accent-primary/50 transition-colors">
+                  <span className="text-[14px] font-medium text-tx-primary">View Project</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </BottomSheet>
 
       <ConfirmDialog

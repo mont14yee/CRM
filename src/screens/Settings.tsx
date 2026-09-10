@@ -239,16 +239,75 @@ export function Settings({ onDismiss }: { onDismiss: () => void }) {
 
   const confirmImport = () => {
     if (!importDataContent) return;
+    
+    // 1. Create a backup of current data before making any changes
+    const currentDataBackup: Record<string, string> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('conneq-')) {
+        currentDataBackup[key] = localStorage.getItem(key) || '';
+      }
+    }
+
     try {
-      const data = JSON.parse(importDataContent);
-      for (const [key, value] of Object.entries(data)) {
-        if (key.startsWith('conneq-')) {
-          localStorage.setItem(key, value as string);
+      // 2. Parse and validate new data
+      const importedData = JSON.parse(importDataContent);
+      if (typeof importedData !== 'object' || importedData === null || Array.isArray(importedData)) {
+        throw new Error('Invalid backup format: root must be an object.');
+      }
+
+      const keysToImport = Object.keys(importedData).filter(key => key.startsWith('conneq-'));
+      if (keysToImport.length === 0) {
+        throw new Error('No valid ConneQ data found in the backup file.');
+      }
+
+      // Pre-flight check: ensure all values are valid JSON strings
+      for (const key of keysToImport) {
+        const value = importedData[key];
+        if (typeof value !== 'string') {
+           throw new Error(`Invalid data format for key ${key}: value must be a stringified JSON.`);
+        }
+        JSON.parse(value); // Throws if not valid JSON
+      }
+
+      // 3. Clear existing data
+      for (const key of Object.keys(currentDataBackup)) {
+        localStorage.removeItem(key);
+      }
+
+      // 4. Apply new data
+      for (const key of keysToImport) {
+        localStorage.setItem(key, importedData[key]);
+        
+        // Verification (partial write check)
+        if (localStorage.getItem(key) !== importedData[key]) {
+          throw new Error(`Failed to write data for ${key}. Storage limit may be reached.`);
         }
       }
-      window.location.reload();
-    } catch (err) {
-      showToast({ message: 'Failed to parse backup file' });
+
+      showToast({ message: 'Data imported successfully' });
+      setTimeout(() => window.location.reload(), 1000);
+      
+    } catch (err: any) {
+      console.error('Import failed, rolling back...', err);
+      
+      // Safe recovery behavior: Rollback
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith('conneq-')) {
+          localStorage.removeItem(key);
+        }
+      }
+      for (const [key, value] of Object.entries(currentDataBackup)) {
+        try {
+           localStorage.setItem(key, value);
+        } catch (e) {
+           console.error('Failed to rollback key:', key, e);
+        }
+      }
+
+      showToast({ message: `Import failed: ${err.message || 'Invalid format'}. Reverted to previous state.` });
+    } finally {
       setIsImportConfirmOpen(false);
       setImportDataContent(null);
     }

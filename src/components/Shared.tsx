@@ -277,7 +277,7 @@ export function CircularProgress({
 export const DayAgendaRow: React.FC<{
   date: string;
   weekday: string;
-  events: { time: string; label: string; onClick?: () => void }[];
+  events: { startTime: string; label: string; onClick?: () => void }[];
 }> = ({ date, weekday, events }) => {
   return (
     <div className="flex flex-col gap-2 mb-6">
@@ -291,7 +291,7 @@ export const DayAgendaRow: React.FC<{
             onClick={evt.onClick}
             className={`flex flex-col justify-center h-16 min-w-[120px] px-4 rounded-[20px] bg-canvas border border-bd-subtle shrink-0 ${evt.onClick ? 'cursor-pointer active:bg-surface-neutral' : ''}`}
           >
-            <div className="text-[13px] font-medium text-tx-primary">{evt.time}</div>
+            <div className="text-[13px] font-medium text-tx-primary">{evt.startTime}</div>
             <div className="text-[13px] text-tx-muted mt-0.5 truncate">{evt.label}</div>
           </div>
         ))}

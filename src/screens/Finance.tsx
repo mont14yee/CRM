@@ -5,6 +5,8 @@ import { BottomSheet, BottomSheetField } from '../components/BottomSheet';
 import { usePreferences } from '../context/PreferencesContext';
 import { useToast } from '../context/ToastContext';
 import { useRevenue } from '../context/RevenueContext';
+import { useNavigation } from '../context/NavigationContext';
+import { useProjects } from '../context/ProjectsContext';
 import { useClients } from '../context/ClientsContext';
 import { getRecentMonths, getMonthsForYear, getTodayDateStr } from '../utils/date';
 import { formatCurrency, formatCurrencyCompact, getCurrencySymbol } from '../utils/currency';
@@ -22,9 +24,13 @@ export function Finance({ onDismiss }: { onDismiss: () => void }) {
   const [editingEntry, setEditingEntry] = useState<RevenueEntry | null>(null);
 
   const { preferences } = usePreferences();
-  const { showToast } = useToast();
+    const { showToast } = useToast();
   const { revenues, yearlyGoal, addRevenue, updateRevenue, deleteRevenue, setYearlyGoal } = useRevenue();
   const { clients } = useClients();
+  const { projects } = useProjects();
+  const { navigationOptions, push, goToTab } = useNavigation();
+  const filterProjectId = navigationOptions?.filterProjectId || '';
+  const filterClientId = navigationOptions?.filterClientId || '';
 
   const [logForm, setLogForm] = useState({
     amount: '',
@@ -362,6 +368,18 @@ export function Finance({ onDismiss }: { onDismiss: () => void }) {
             Delete Entry
           </button>
         )}
+        {editingEntry && (
+          <div className="pt-4 mt-4 border-t border-bd-subtle">
+            <h4 className="text-[13px] font-bold text-tx-muted uppercase tracking-wider mb-3">Related</h4>
+            <div className="grid grid-cols-2 gap-3">
+              {editingEntry.projectId && (
+                <button onClick={() => { setLogSheetOpen(false); goToTab('projects', { filterProjectId: editingEntry.projectId }); }} className="flex items-center gap-2 p-3 bg-surface-neutral/30 rounded-xl border border-bd-subtle hover:border-accent-primary/50 transition-colors">
+                  <span className="text-[14px] font-medium text-tx-primary">View Project</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </BottomSheet>
 
       <BottomSheet
@@ -395,6 +413,18 @@ export function Finance({ onDismiss }: { onDismiss: () => void }) {
             <option>Custom</option>
           </select>
         </BottomSheetField>
+        {editingEntry && (
+          <div className="pt-4 mt-4 border-t border-bd-subtle">
+            <h4 className="text-[13px] font-bold text-tx-muted uppercase tracking-wider mb-3">Related</h4>
+            <div className="grid grid-cols-2 gap-3">
+              {editingEntry.projectId && (
+                <button onClick={() => { setLogSheetOpen(false); goToTab('projects', { filterProjectId: editingEntry.projectId }); }} className="flex items-center gap-2 p-3 bg-surface-neutral/30 rounded-xl border border-bd-subtle hover:border-accent-primary/50 transition-colors">
+                  <span className="text-[14px] font-medium text-tx-primary">View Project</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </BottomSheet>
 
       <ConfirmDialog

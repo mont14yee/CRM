@@ -21,6 +21,11 @@ interface TimeTrackerContextType {
   
   activeProjectId: string;
   setActiveProjectId: (id: string) => void;
+  activeTaskId: string;
+  setActiveTaskId: (id: string) => void;
+  activeClientId: string;
+  setActiveClientId: (id: string) => void;
+  startTimerFor: (params: { projectId?: string; taskId?: string; clientId?: string; note?: string }) => void;
   activeNote: string;
   setActiveNote: (note: string) => void;
   activeBillable: boolean;
@@ -37,6 +42,8 @@ export function TimeTrackerProvider({ children }: { children: ReactNode }) {
   const [accumulatedSeconds, setAccumulatedSeconds] = useLocalStorage<number>('conneq-timer-accumulated', 0);
   
   const [activeProjectId, setActiveProjectId] = useLocalStorage<string>('conneq-timer-project', '');
+  const [activeTaskId, setActiveTaskId] = useLocalStorage<string>('conneq-timer-task', '');
+  const [activeClientId, setActiveClientId] = useLocalStorage<string>('conneq-timer-client', '');
   const [activeNote, setActiveNote] = useLocalStorage<string>('conneq-timer-note', '');
   const [activeBillable, setActiveBillable] = useLocalStorage<boolean>('conneq-timer-billable', true);
 
@@ -73,16 +80,40 @@ export function TimeTrackerProvider({ children }: { children: ReactNode }) {
   }, [timeEntries, setTimeEntries]);
 
   const addTimeEntry = (entry: Omit<TimeEntry, 'id'>) => {
-    const newEntry: TimeEntry = { ...entry, id: generateId() };
+    const newEntry: TimeEntry = { ...entry, id: generateId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     setTimeEntries((prev) => [...prev, newEntry]);
   };
 
   const updateTimeEntry = (id: string, updates: Partial<TimeEntry>) => {
-    setTimeEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)));
+    setTimeEntries((prev) => prev.map((e) => (e.id === id ? { updatedAt: new Date().toISOString(), ...e, ...updates } : e)));
   };
 
   const deleteTimeEntry = (id: string) => {
     setTimeEntries((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  const startTimerFor = ({ projectId, taskId, clientId, note }: { projectId?: string; taskId?: string; clientId?: string; note?: string }) => {
+    if (timerState === 'running') {
+      stopTimer();
+      // Wait for state to settle? No, stopTimer is synchronous enough for accumulated.
+      // We will actually just save the current entry and reset.
+      // Wait, stopTimer just pauses. The user has to save it manually?
+      // No, in standard apps, starting a new timer when one is running usually stops and saves the old one, or just pauses it.
+      // Let's just pause the current one.
+      pauseTimer();
+    }
+    resetTimer(); // clears current active states
+    if (projectId) setActiveProjectId(projectId);
+    if (taskId) setActiveTaskId(taskId);
+    if (clientId) setActiveClientId(clientId);
+    if (note) setActiveNote(note);
+    
+    // Now start
+    const now = Date.now();
+    setTimerStartedAt(new Date(now).toISOString());
+    setAccumulatedSeconds(0);
+    setTimerResumedAt(now);
+    setTimerState('running');
   };
 
   const startTimer = () => {
@@ -114,6 +145,8 @@ export function TimeTrackerProvider({ children }: { children: ReactNode }) {
     setTimerResumedAt(null);
     setAccumulatedSeconds(0);
     setActiveProjectId('');
+    setActiveTaskId('');
+    setActiveClientId('');
     setActiveNote('');
     setActiveBillable(true);
   };
@@ -129,6 +162,9 @@ export function TimeTrackerProvider({ children }: { children: ReactNode }) {
       timerState, startTimer, pauseTimer, stopTimer, resetTimer,
       timerStartedAt, elapsedSeconds,
       activeProjectId, setActiveProjectId,
+      activeTaskId, setActiveTaskId,
+      activeClientId, setActiveClientId,
+      startTimerFor,
       activeNote, setActiveNote,
       activeBillable, setActiveBillable
     }}>

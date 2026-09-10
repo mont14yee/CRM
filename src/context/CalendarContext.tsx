@@ -5,7 +5,7 @@ import { generateId } from '../utils/id';
 
 interface CalendarContextType {
   events: EventItem[];
-  addEvent: (event: Omit<EventItem, 'id'>) => void;
+  addEvent: (event: Omit<EventItem, 'id'>) => string;
   updateEvent: (id: string, updates: Partial<EventItem>) => void;
   deleteEvent: (id: string) => void;
 }
@@ -16,12 +16,13 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useLocalStorage<EventItem[]>('conneq-events', []);
 
   const addEvent = (event: Omit<EventItem, 'id'>) => {
-    const newEvent: EventItem = { ...event, id: generateId() };
+    const newEvent: EventItem = { ...event, id: generateId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     setEvents((prev) => [...prev, newEvent]);
+    return newEvent.id;
   };
 
   const updateEvent = (id: string, updates: Partial<EventItem>) => {
-    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)));
+    setEvents((prev) => prev.map((e) => (e.id === id ? { updatedAt: new Date().toISOString(), ...e, ...updates } : e)));
   };
 
   const deleteEvent = (id: string) => {
